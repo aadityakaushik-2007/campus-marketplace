@@ -1,0 +1,15 @@
+{
+  "name": "campus-marketplace-database-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PostgreSQL setup, integrity tests, and terminal operations for Campus Marketplace",
+  "type": "module",
+  "scripts": {
+    "db:setup": "node database/run.js setup",
+    "db:test": "node database/run.js test",
+    "db:cli": "node database/run.js cli"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}
