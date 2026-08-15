@@ -10,7 +10,7 @@ CREATE TABLE users (
     CONSTRAINT users_name_not_blank CHECK (btrim(name) <> ''),
     -- Email values must be stored lower case so the unique key is case-insensitive in practice.
     CONSTRAINT users_email_normalized_check CHECK (email = lower(email)),
-    CONSTRAINT users_campus_email_check CHECK (email LIKE '%@youruniversity.edu')
+    CONSTRAINT users_campus_email_check CHECK (email LIKE '%@thapar.edu')
 );
 
 COMMENT ON TABLE users IS 'Application profiles linked to Supabase Auth; credentials are never stored here.';
