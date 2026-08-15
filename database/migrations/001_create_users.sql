@@ -1,4 +1,4 @@
--- Replace youruniversity.edu in this constraint before deploying.
+-- Campus-only user profiles for Thapar University.
 CREATE TABLE users (
     user_id BIGSERIAL PRIMARY KEY,
     auth_user_id UUID NOT NULL,

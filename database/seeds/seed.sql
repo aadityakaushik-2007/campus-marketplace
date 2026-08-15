@@ -1,15 +1,15 @@
--- Demo data only. The youruniversity.edu domain is a placeholder.
+-- Demo data only. Campus addresses use the configured thapar.edu domain.
 INSERT INTO users (auth_user_id, name, email) VALUES
-('00000000-0000-4000-8000-000000000001', 'Aarav Sharma', 'aarav.sharma@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000002', 'Diya Patel', 'diya.patel@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000003', 'Kabir Singh', 'kabir.singh@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000004', 'Meera Nair', 'meera.nair@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000005', 'Rohan Gupta', 'rohan.gupta@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000006', 'Ananya Iyer', 'ananya.iyer@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000007', 'Vivaan Rao', 'vivaan.rao@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000008', 'Isha Kapoor', 'isha.kapoor@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000009', 'Arjun Menon', 'arjun.menon@youruniversity.edu'),
-('00000000-0000-4000-8000-000000000010', 'Sana Khan', 'sana.khan@youruniversity.edu');
+('00000000-0000-4000-8000-000000000001', 'Aarav Sharma', 'aarav.sharma@thapar.edu'),
+('00000000-0000-4000-8000-000000000002', 'Diya Patel', 'diya.patel@thapar.edu'),
+('00000000-0000-4000-8000-000000000003', 'Kabir Singh', 'kabir.singh@thapar.edu'),
+('00000000-0000-4000-8000-000000000004', 'Meera Nair', 'meera.nair@thapar.edu'),
+('00000000-0000-4000-8000-000000000005', 'Rohan Gupta', 'rohan.gupta@thapar.edu'),
+('00000000-0000-4000-8000-000000000006', 'Ananya Iyer', 'ananya.iyer@thapar.edu'),
+('00000000-0000-4000-8000-000000000007', 'Vivaan Rao', 'vivaan.rao@thapar.edu'),
+('00000000-0000-4000-8000-000000000008', 'Isha Kapoor', 'isha.kapoor@thapar.edu'),
+('00000000-0000-4000-8000-000000000009', 'Arjun Menon', 'arjun.menon@thapar.edu'),
+('00000000-0000-4000-8000-000000000010', 'Sana Khan', 'sana.khan@thapar.edu');
 
 INSERT INTO categories (name) VALUES
 ('Books'), ('Electronics'), ('Stationery'), ('Furniture'), ('Clothing'), ('Other');

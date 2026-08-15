@@ -15,7 +15,7 @@ The six application tables are:
 | `borrowings` | Time-bounded item reservations and returns. |
 | `transactions` | Offline sale agreements between buyers and sellers. |
 
-`@youruniversity.edu` in `001_create_users.sql` is a placeholder. Replace it with the actual campus domain before production use.
+Campus emails are enforced as `@thapar.edu` in the users migration and demo data.
 
 Listings are soft-deleted through `ACTIVE`, `SOLD`, and `REMOVED` status values, preserving marketplace history. Images remain in Supabase Storage; only their URL/path is stored here. Payments happen offline and transactions record only the agreed amount.
 

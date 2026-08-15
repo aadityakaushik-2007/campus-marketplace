@@ -66,7 +66,7 @@ async function tests() {
     if (seeded.rows[0].count < 10) throw new Error('Demo data is missing. Run npm run db:setup against an empty database first.');
 
     await expectFailure(client, 'duplicate email', () => client.query(
-      "INSERT INTO users (auth_user_id, name, email) VALUES ('20000000-0000-4000-8000-000000000001', 'Duplicate', 'aarav.sharma@youruniversity.edu')"));
+      "INSERT INTO users (auth_user_id, name, email) VALUES ('20000000-0000-4000-8000-000000000001', 'Duplicate', 'aarav.sharma@thapar.edu')"));
     await expectFailure(client, 'non-campus email', () => client.query(
       "INSERT INTO users (auth_user_id, name, email) VALUES ('20000000-0000-4000-8000-000000000002', 'Outside', 'outside@example.com')"));
     await expectFailure(client, 'invalid listing type', () => client.query(
