@@ -1,4 +1,5 @@
--- A purchase is atomic: locking, validation, transaction creation, and SOLD state change all succeed or roll back together.
+-- A purchase is kept atomic so the transaction and SOLD status either
+-- both happen or neither of them does.
 BEGIN;
 
 SELECT listing_id, owner_id, type, price, status
@@ -6,34 +7,70 @@ FROM listings
 WHERE listing_id = 3
 FOR UPDATE;
 
--- After checking ACTIVE + SELL and using the returned owner/price, create the record.
+-- use the listing's current owner and price when creating the transaction
 INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
 SELECT listing_id, 2, owner_id, price
 FROM listings
-WHERE listing_id = 3 AND status = 'ACTIVE' AND type = 'SELL';
+WHERE listing_id = 3
+  AND status = 'ACTIVE'
+  AND type = 'SELL';
 
-UPDATE listings SET status = 'SOLD' WHERE listing_id = 3 AND status = 'ACTIVE';
+-- only mark the listing as sold after the transaction has been created
+UPDATE listings
+SET status = 'SOLD'
+WHERE listing_id = 3
+  AND status = 'ACTIVE';
+
 COMMIT;
 
--- Atomicity demonstration: neither statement below persists.
+
+-- nothing below persists because the whole transaction is rolled back
 BEGIN;
+
 INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
 SELECT listing_id, 4, owner_id, price
 FROM listings
-WHERE listing_id = 7 AND status = 'ACTIVE' AND type = 'SELL';
-UPDATE listings SET status = 'SOLD' WHERE listing_id = 7;
+WHERE listing_id = 7
+  AND status = 'ACTIVE'
+  AND type = 'SELL';
+
+UPDATE listings
+SET status = 'SOLD'
+WHERE listing_id = 7;
+
 ROLLBACK;
 
-SELECT t.*, l.title FROM transactions t JOIN listings l USING (listing_id)
-WHERE t.buyer_id = 2 ORDER BY t.created_at DESC;
-SELECT t.*, l.title FROM transactions t JOIN listings l USING (listing_id)
-WHERE t.seller_id = 3 ORDER BY t.created_at DESC;
 
+-- show all purchases made by a particular user
+SELECT t.*, l.title
+FROM transactions t
+JOIN listings l USING (listing_id)
+WHERE t.buyer_id = 2
+ORDER BY t.created_at DESC;
+
+
+-- show all sales made by a particular user
+SELECT t.*, l.title
+FROM transactions t
+JOIN listings l USING (listing_id)
+WHERE t.seller_id = 3
+ORDER BY t.created_at DESC;
+
+
+-- mark a pending transaction as completed and record when it was completed
 UPDATE transactions
-SET status = 'COMPLETED', completed_at = NOW()
-WHERE transaction_id = 3 AND status = 'PENDING';
+SET status = 'COMPLETED',
+    completed_at = NOW()
+WHERE transaction_id = 3
+  AND status = 'PENDING';
 
-SELECT * FROM transactions WHERE listing_id = 3 ORDER BY created_at;
 
--- Concurrent-purchase protection: see concurrency.sql. Lock the listing before the
--- INSERT/UPDATE pair. The unique listing index additionally prevents two transactions.
+-- show the transaction history for a listing
+SELECT *
+FROM transactions
+WHERE listing_id = 3
+ORDER BY created_at;
+
+
+-- for concurrent purchases, lock the listing before creating the transaction.
+-- the unique listing index provides an additional database-level safeguard.

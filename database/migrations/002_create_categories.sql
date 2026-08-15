@@ -1,3 +1,4 @@
+-- Categories used to group marketplace listings.
 CREATE TABLE categories (
     category_id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
