@@ -4,6 +4,8 @@ PostgreSQL database layer for the campus marketplace. It contains migrations, se
 
 ## Schema
 
+![Database schema](diagram/schema.jpg)
+
 The six application tables are:
 
 | Table | Purpose |
