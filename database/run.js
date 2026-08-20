@@ -57,7 +57,7 @@ async function expectFailure(client, name, operation) {
     throw new Error(`${name}: expected PostgreSQL to reject this operation`);
   } catch (error) {
     if (error.message.endsWith('expected PostgreSQL to reject this operation')) throw error;
-    if (!['23503', '23505', '23514', '23P01'].includes(error.code)) throw error;
+    if (!['23502', '23503', '23505', '23514', '23P01'].includes(error.code)) throw error;
     console.log(`PASS expected rejection: ${name} (${error.code})`);
   } finally {
     await client.query('ROLLBACK');
@@ -114,6 +114,18 @@ async function tests() {
       "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (3, 1, '2027-11-02 10:00+00', '2027-11-03 10:00+00')"
     ));
 
+    await expectFailure(client, 'owner borrowing own listing', () => client.query(
+      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 2, '2027-11-02 10:00+00', '2027-11-03 10:00+00')"
+    ));
+
+    await expectFailure(client, 'borrowing removed listing', () => client.query(
+      "UPDATE listings SET status = 'REMOVED' WHERE listing_id = 12; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (12, 1, '2027-11-02 10:00+00', '2027-11-03 10:00+00')"
+    ));
+
+    await expectFailure(client, 'direct BOOKED borrowing on insert', () => client.query(
+      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES (12, 1, '2027-11-02 10:00+00', '2027-11-03 10:00+00', 'BOOKED', NOW())"
+    ));
+
     // overlap is only checked for BOOKED/ACTIVE rows, so these two explicitly
     // request BOOKED (with responded_at set, satisfying borrowings_responded_at_check)
     // to actually exercise the exclusion constraint rather than a different check
@@ -149,6 +161,18 @@ async function tests() {
       'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (2, 1)'
     ));
 
+    await expectFailure(client, 'direct ACCEPTED purchase request', () => client.query(
+      "INSERT INTO purchase_requests (listing_id, buyer_id, status, responded_at) VALUES (3, 4, 'ACCEPTED', NOW())"
+    ));
+
+    await expectFailure(client, 'accept purchase request after listing removed', () => client.query(
+      "UPDATE listings SET status = 'REMOVED' WHERE listing_id = 9; UPDATE purchase_requests SET status = 'ACCEPTED', responded_at = NOW() WHERE request_id = 7 AND status = 'PENDING'"
+    ));
+
+    await expectFailure(client, 'direct transaction without accepted request', () => client.query(
+      "INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount) VALUES (999999, 3, 4, 3, 700)"
+    ));
+
     await expectFailure(client, 'duplicate pending purchase request', () => client.query(
       'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (3, 4)'
     ));
@@ -163,6 +187,18 @@ async function tests() {
 
     await expectFailure(client, 'duplicate review of the same deal', () => client.query(
       'INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (1, 2, 1, 1)'
+    ));
+
+    await expectFailure(client, 'invalid review update', () => client.query(
+      'UPDATE reviews SET reviewer_id = 9 WHERE review_id = 1'
+    ));
+
+    await expectFailure(client, 'remove listing with active borrowing', () => client.query(
+      "UPDATE listings SET status = 'REMOVED' WHERE listing_id = 2"
+    ));
+
+    await expectFailure(client, 'SOLD listing cannot become ACTIVE', () => client.query(
+      "UPDATE listings SET status = 'ACTIVE' WHERE listing_id = 1"
     ));
 
     await client.query('BEGIN');

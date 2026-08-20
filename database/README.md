@@ -15,7 +15,7 @@ The eight application tables are:
 | `listings` | Items offered for sale or borrowing. |
 | `listing_images` | Supabase Storage URLs/paths for listing images. |
 | `borrowings` | Borrow requests: `PENDING` until the owner accepts or rejects them, then a time-bounded reservation. |
-| `transactions` | Sale records, created once a seller accepts a purchase request. |
+| `transactions` | Sale records, created from an accepted purchase request. |
 | `purchase_requests` | Buyers expressing interest in a `SELL` listing before the seller picks one. |
 | `reviews` | Post-deal ratings, tied to exactly one completed transaction or returned borrowing. |
 
@@ -40,11 +40,11 @@ Both borrowing and buying go through a request, then an accept/reject step, rath
 - Listings cannot be edited after creation (`listings_prevent_core_edits`); status and `updated_at` are unaffected.
 - Borrowings must use a `BORROW` listing and have `end_time > start_time`. `total_amount` is computed automatically and cannot be edited directly (`borrowings_prevent_amount_tamper`).
 - `btree_gist` plus the `no_overlapping_bookings` exclusion constraint rejects overlapping `BOOKED`/`ACTIVE` periods for the same item. Booking periods are half-open `[start_time, end_time)`, so adjacent reservations are valid.
-- Status changes follow a fixed state machine, not free-form updates: borrowings only move `PENDING → BOOKED/REJECTED`, `BOOKED → ACTIVE/CANCELLED`, `ACTIVE → RETURNED`; purchase requests only move `PENDING → ACCEPTED/REJECTED/CANCELLED`; transactions only move `PENDING → COMPLETED/CANCELLED`. `responded_at` is required exactly when a borrowing or purchase request has left `PENDING`.
-- Purchase requests require an `ACTIVE` `SELL` listing, block an owner requesting their own listing, allow at most one `PENDING` and one `ACCEPTED` request per listing, and accepting one auto-rejects the other `PENDING` requests on that listing.
-- Transactions require an `ACTIVE` `SELL` listing, a `seller_id` matching the real owner, and an `amount` matching the listing price. Only one transaction can ever exist per listing.
-- Reviews require a `COMPLETED` transaction or `RETURNED` borrowing, can only be left by that deal's actual two parties, and are limited to one review per reviewer per deal.
-- Listing updates automatically refresh `updated_at`.
+- Status changes follow a fixed state machine, not free-form updates: borrowings only move `PENDING → BOOKED/REJECTED/CANCELLED`, `BOOKED → ACTIVE/CANCELLED`, `ACTIVE → RETURNED`; purchase requests only move `PENDING → ACCEPTED/REJECTED/CANCELLED`; transactions only move `PENDING → COMPLETED/CANCELLED`. `responded_at` is required exactly when a borrowing or purchase request has left `PENDING`.
+- Purchase requests require an `ACTIVE` `SELL` listing, block an owner requesting their own listing, and every new request must start `PENDING`. A request can only become `ACCEPTED` while its listing is still `ACTIVE`; at most one `PENDING` and one `ACCEPTED` request can exist per listing, and accepting one auto-rejects the other `PENDING` requests.
+- Transactions require an `ACCEPTED` `purchase_request_id` and must match that request's listing and buyer, plus an `ACTIVE` `SELL` listing, the real owner as seller, and the listing price as amount. Only one transaction can ever exist per listing.
+- Reviews require a `COMPLETED` transaction or `RETURNED` borrowing, can only be left by that deal's actual two parties, and are limited to one review per reviewer per deal. The same party validation also runs on review updates.
+- Listing updates automatically refresh `updated_at`. Listing lifecycle is guarded: `ACTIVE → SOLD` is only allowed after a transaction exists, `ACTIVE → REMOVED` is allowed only without `BOOKED`/`ACTIVE` borrowings, and `SOLD`/`REMOVED` listings cannot be reopened. Listing ownership cannot be changed once borrowing, transaction, or review history exists.
 - Purchase and booking workflows use PostgreSQL transactions and row locks. The database constraints remain the final integrity authority.
 
 ### CRUD sanity check output
@@ -237,8 +237,8 @@ Accept the request, record the sale, and mark the listing sold, then commit:
 ```sql
 UPDATE purchase_requests SET status = 'ACCEPTED', responded_at = NOW() WHERE request_id = 6;
 
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-VALUES (7, 9, 7, 900.00);
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount)
+VALUES (6, 7, 9, 7, 900.00);
 
 UPDATE listings SET status = 'SOLD' WHERE listing_id = 7;
 

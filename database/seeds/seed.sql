@@ -72,34 +72,42 @@ INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, r
 -- The seed mirrors the same two-step flow the CLI uses: request, then the
 -- owner accepts one (auto-rejecting any other pending requests for that
 -- listing) and only then is the matching transactions row created below.
-INSERT INTO purchase_requests (listing_id, buyer_id, status, responded_at) VALUES
-(1, 2, 'ACCEPTED', NOW()),
-(4, 7, 'ACCEPTED', NOW()),
-(5, 8, 'ACCEPTED', NOW()),
--- Buyer 6 also wanted listing 1, but buyer 2 was accepted first.
-(1, 6, 'REJECTED', NOW()),
--- Still-open interest on listings that haven't sold yet.
-(3, 4, 'PENDING', NULL),
-(7, 9, 'PENDING', NULL),
-(9, 10, 'PENDING', NULL);
+INSERT INTO purchase_requests (listing_id, buyer_id) VALUES
+(1, 2),
+(4, 7),
+(5, 8),
+(1, 6),
+(3, 4),
+(7, 9),
+(9, 10);
+
+-- Resolve the accepted/rejected requests through the same state transitions
+-- used by the application. New requests must always start PENDING.
+UPDATE purchase_requests
+SET status = 'ACCEPTED', responded_at = NOW()
+WHERE request_id IN (1, 2, 3);
+
+UPDATE purchase_requests
+SET status = 'REJECTED', responded_at = NOW()
+WHERE request_id = 4;
 
 -- Purchase transaction and SOLD transition are performed atomically per listing,
 -- matching an ACCEPTED purchase_requests row above.
 BEGIN;
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount, status, completed_at)
-VALUES (1, 2, 1, 450.00, 'COMPLETED', NOW());
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount, status, completed_at)
+VALUES (1, 1, 2, 1, 450.00, 'COMPLETED', NOW());
 UPDATE listings SET status = 'SOLD' WHERE listing_id = 1;
 COMMIT;
 
 BEGIN;
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount, status, completed_at)
-VALUES (4, 7, 4, 1800.00, 'COMPLETED', NOW());
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount, status, completed_at)
+VALUES (2, 4, 7, 4, 1800.00, 'COMPLETED', NOW());
 UPDATE listings SET status = 'SOLD' WHERE listing_id = 4;
 COMMIT;
 
 BEGIN;
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount, status)
-VALUES (5, 8, 5, 600.00, 'PENDING');
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount, status)
+VALUES (3, 5, 8, 5, 600.00, 'PENDING');
 UPDATE listings SET status = 'SOLD' WHERE listing_id = 5;
 COMMIT;
 

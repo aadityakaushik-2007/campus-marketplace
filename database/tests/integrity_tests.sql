@@ -38,8 +38,9 @@ BEGIN; INSERT INTO listings (owner_id, category_id, title, type, price) VALUES (
 -- 8. Invalid borrowing dates
 BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 1, '2027-11-02 10:00+00', '2027-11-02 10:00+00'); ROLLBACK;
 
--- 9. Borrowing a SELL listing
+-- 9. Borrowing a SELL listing; owner cannot borrow own listing.
 BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (3, 1, '2027-11-02 10:00+00', '2027-11-03 10:00+00'); ROLLBACK;
+BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 2, '2027-11-02 10:00+00', '2027-11-03 10:00+00'); ROLLBACK;
 
 -- 10. Overlapping active/BOOKED Drill booking. Borrowings default to PENDING now, and
 -- no_overlapping_bookings only checks BOOKED/ACTIVE rows, so status = 'BOOKED' is
@@ -50,7 +51,10 @@ BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, st
 -- Identical ranges overlap too.
 BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES (2, 1, '2027-08-15 10:00+00', '2027-08-17 10:00+00', 'BOOKED', NOW()); ROLLBACK;
 
--- 11. Invalid borrowing and transaction statuses
+-- 11. Invalid borrowing and transaction statuses; requests cannot be created
+-- directly in BOOKED/ACCEPTED states.
+BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES (12, 1, '2027-11-04 10:00+00', '2027-11-05 10:00+00', 'BOOKED', NOW()); ROLLBACK;
+BEGIN; INSERT INTO purchase_requests (listing_id, buyer_id, status, responded_at) VALUES (3, 4, 'ACCEPTED', NOW()); ROLLBACK;
 BEGIN; INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status) VALUES (2, 1, '2027-11-04 10:00+00', '2027-11-05 10:00+00', 'LOST'); ROLLBACK;
 BEGIN; INSERT INTO transactions (listing_id, buyer_id, seller_id, amount, status) VALUES (3, 1, 3, 700, 'PAID'); ROLLBACK;
 
@@ -61,8 +65,14 @@ BEGIN; UPDATE listings SET description = 'sneaky edit' WHERE listing_id = 2; ROL
 -- 13. Purchase requests: an owner can't request their own listing.
 BEGIN; INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (9, 9); ROLLBACK;
 
--- 14. Purchase requests only target ACTIVE SELL listings (not BORROW, not SOLD).
+-- 14. Purchase requests only target ACTIVE SELL listings (not BORROW, not SOLD),
+-- and an existing PENDING request cannot be accepted after the listing is removed.
 BEGIN; INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (2, 1); ROLLBACK;
+BEGIN;
+UPDATE listings SET status = 'REMOVED' WHERE listing_id = 9;
+UPDATE purchase_requests SET status = 'ACCEPTED', responded_at = NOW()
+WHERE request_id = 7 AND status = 'PENDING';
+ROLLBACK;
 
 -- 15. A buyer can't have two PENDING requests on the same listing at once
 -- (buyer 4 already has a PENDING request on listing 3 in the seed data).
@@ -78,8 +88,32 @@ BEGIN; INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VA
 -- 18. Reviewer and reviewee can't be the same person.
 BEGIN; INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (1, 1, 1, 5); ROLLBACK;
 
+-- Review party validation also applies when an existing review is edited.
+BEGIN; UPDATE reviews SET reviewer_id = 9 WHERE review_id = 1; ROLLBACK;
+
 -- 19. Only one review per person per deal (transaction 1, reviewer 2, in the seed data).
 BEGIN; INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (1, 2, 1, 1); ROLLBACK;
+
+-- A listing with active borrowing history cannot be removed, and SOLD/REMOVED
+-- listings cannot be reopened.
+BEGIN; UPDATE listings SET status = 'REMOVED' WHERE listing_id = 2; ROLLBACK;
+BEGIN; UPDATE listings SET status = 'ACTIVE' WHERE listing_id = 1; ROLLBACK;
+BEGIN;
+UPDATE listings SET status = 'REMOVED' WHERE listing_id = 3;
+UPDATE listings SET status = 'ACTIVE' WHERE listing_id = 3;
+ROLLBACK;
+
+-- Ownership changes are blocked once borrowing history exists.
+BEGIN; UPDATE listings SET owner_id = 3 WHERE listing_id = 2; ROLLBACK;
+
+-- A PENDING borrowing can be cancelled.
+BEGIN;
+INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time)
+VALUES (12, 1, '2027-11-10 10:00+00', '2027-11-11 10:00+00')
+RETURNING borrowing_id;
+UPDATE borrowings SET status = 'CANCELLED', responded_at = NOW()
+WHERE listing_id = 12 AND borrower_id = 1 AND status = 'PENDING';
+ROLLBACK;
 
 -- Positive controls: adjacent intervals are valid; cancelled intervals do not block time.
 BEGIN;

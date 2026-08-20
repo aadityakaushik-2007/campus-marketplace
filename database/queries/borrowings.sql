@@ -56,14 +56,14 @@ VALUES (6, 5, '2027-10-01 18:00+00', '2027-10-03 18:00+00');
 -- overlap an already-BOOKED period for the same listing.
 UPDATE borrowings
 SET status = 'BOOKED', responded_at = NOW()
-WHERE borrowing_id = 4
+WHERE borrowing_id = 9
   AND status = 'PENDING'
 RETURNING borrowing_id, status, total_amount;
 
 -- the owner rejects a request instead
 UPDATE borrowings
 SET status = 'REJECTED', responded_at = NOW()
-WHERE borrowing_id = 5
+WHERE borrowing_id = 10
   AND status = 'PENDING';
 
 
@@ -71,15 +71,21 @@ WHERE borrowing_id = 5
 BEGIN;
 UPDATE borrowings
 SET status = 'BOOKED', responded_at = NOW()
-WHERE borrowing_id = 5
+WHERE borrowing_id = 9
   AND status = 'PENDING';
 ROLLBACK;
 
 
 -- mark a completed borrowing as returned
 UPDATE borrowings
+SET status = 'ACTIVE'
+WHERE borrowing_id = 1
+  AND status = 'BOOKED';
+
+UPDATE borrowings
 SET status = 'RETURNED'
-WHERE borrowing_id = 4;
+WHERE borrowing_id = 1
+  AND status = 'ACTIVE';
 
 -- cancel a booking that is no longer needed
 UPDATE borrowings

@@ -19,12 +19,14 @@ WHERE listing_id = 3
 FOR UPDATE;
 
 -- use the listing's current owner and price when creating the transaction
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-SELECT listing_id, 4, owner_id, price
-FROM listings
-WHERE listing_id = 3
-  AND status = 'ACTIVE'
-  AND type = 'SELL';
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount)
+SELECT request_id, listing_id, buyer_id, owner_id, price
+FROM purchase_requests
+JOIN listings USING (listing_id)
+WHERE request_id = 5
+  AND status = 'ACCEPTED'
+  AND listings.status = 'ACTIVE'
+  AND listings.type = 'SELL';
 
 -- only mark the listing as sold after the transaction has been created
 UPDATE listings
@@ -38,12 +40,19 @@ COMMIT;
 -- nothing below persists because the whole transaction is rolled back
 BEGIN;
 
-INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-SELECT listing_id, 9, owner_id, price
-FROM listings
-WHERE listing_id = 7
-  AND status = 'ACTIVE'
-  AND type = 'SELL';
+UPDATE purchase_requests
+SET status = 'ACCEPTED', responded_at = NOW()
+WHERE request_id = 6
+  AND status = 'PENDING';
+
+INSERT INTO transactions (purchase_request_id, listing_id, buyer_id, seller_id, amount)
+SELECT request_id, listing_id, buyer_id, owner_id, price
+FROM purchase_requests
+JOIN listings USING (listing_id)
+WHERE request_id = 6
+  AND status = 'ACCEPTED'
+  AND listings.status = 'ACTIVE'
+  AND listings.type = 'SELL';
 
 UPDATE listings
 SET status = 'SOLD'
