@@ -7,6 +7,7 @@ CREATE TABLE listings (
     description TEXT,
     type TEXT NOT NULL,
     price NUMERIC(12, 2),
+    price_per_day NUMERIC(12, 2),
     status TEXT NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -21,10 +22,12 @@ CREATE TABLE listings (
     CONSTRAINT listings_type_check CHECK (type IN ('SELL', 'BORROW')),
     CONSTRAINT listings_status_check CHECK (status IN ('ACTIVE', 'SOLD', 'REMOVED')),
 
-    -- Selling listings need a price, while borrowing listings don't.
+    -- SELL listings carry a one-time price. BORROW listings instead carry a
+    -- per-day rental rate; borrowings.total_amount is priced from this
+    -- automatically based on how many days are requested.
     CONSTRAINT listings_price_check CHECK (
-        (type = 'SELL' AND price IS NOT NULL AND price >= 0)
-        OR (type = 'BORROW' AND price IS NULL)
+        (type = 'SELL' AND price IS NOT NULL AND price >= 0 AND price_per_day IS NULL)
+        OR (type = 'BORROW' AND price IS NULL AND price_per_day IS NOT NULL AND price_per_day >= 0)
     )
 );
 
@@ -50,3 +53,4 @@ EXECUTE FUNCTION set_listings_updated_at();
 -- Listing status describes the listing itself; borrowing availability
 -- is handled separately through the borrowings table.
 COMMENT ON COLUMN listings.status IS 'Lifecycle state only. Borrowing availability is derived from borrowings.';
+COMMENT ON COLUMN listings.price_per_day IS 'Rental rate for BORROW listings. borrowings.total_amount is computed from this automatically.';

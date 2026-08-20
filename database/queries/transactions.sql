@@ -1,6 +1,17 @@
--- A purchase is kept atomic so the transaction and SOLD status either
--- both happen or neither of them does.
+-- A transaction is now created by accepting a purchase_requests row (see
+-- purchase_requests.sql), not by inserting into transactions directly.
+-- This file covers the transactions table itself, once that row exists.
+
+-- Accepting a request is kept atomic: the request becomes ACCEPTED (which
+-- auto-rejects any other pending requests on the same listing), the
+-- transaction is created, and the listing is marked SOLD together.
 BEGIN;
+
+UPDATE purchase_requests
+SET status = 'ACCEPTED', responded_at = NOW()
+WHERE request_id = 5
+  AND status = 'PENDING'
+RETURNING listing_id, buyer_id;
 
 SELECT listing_id, owner_id, type, price, status
 FROM listings
@@ -9,7 +20,7 @@ FOR UPDATE;
 
 -- use the listing's current owner and price when creating the transaction
 INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-SELECT listing_id, 2, owner_id, price
+SELECT listing_id, 4, owner_id, price
 FROM listings
 WHERE listing_id = 3
   AND status = 'ACTIVE'
@@ -28,7 +39,7 @@ COMMIT;
 BEGIN;
 
 INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-SELECT listing_id, 4, owner_id, price
+SELECT listing_id, 9, owner_id, price
 FROM listings
 WHERE listing_id = 7
   AND status = 'ACTIVE'

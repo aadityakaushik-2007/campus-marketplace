@@ -6,7 +6,7 @@ PostgreSQL database layer for the campus marketplace. It contains migrations, se
 
 ![Database schema](diagram/schema.jpg)
 
-The six application tables are:
+The eight application tables are:
 
 | Table | Purpose |
 | --- | --- |
@@ -14,33 +14,48 @@ The six application tables are:
 | `categories` | Listing categories. |
 | `listings` | Items offered for sale or borrowing. |
 | `listing_images` | Supabase Storage URLs/paths for listing images. |
-| `borrowings` | Time-bounded item reservations and returns. |
-| `transactions` | Offline sale agreements between buyers and sellers. |
+| `borrowings` | Borrow requests: `PENDING` until the owner accepts or rejects them, then a time-bounded reservation. |
+| `transactions` | Sale records, created once a seller accepts a purchase request. |
+| `purchase_requests` | Buyers expressing interest in a `SELL` listing before the seller picks one. |
+| `reviews` | Post-deal ratings, tied to exactly one completed transaction or returned borrowing. |
 
 Campus emails are enforced as `@thapar.edu` in the users migration and demo data.
 
-Listings are soft-deleted through `ACTIVE`, `SOLD`, and `REMOVED` status values, preserving marketplace history. Images remain in Supabase Storage; only their URL/path is stored here. Payments happen offline and transactions record only the agreed amount.
+Listings are soft-deleted through `ACTIVE`, `SOLD`, and `REMOVED` status values, preserving marketplace history. Listings cannot be edited after creation (title, description, category, price, price_per_day, and type are immutable) — to change any of these, remove the old listing and create a new one, so buyers never see a listing silently change under them. Images remain in Supabase Storage; only their URL/path is stored here. Payments happen offline; `users.contact_info` is an optional handle the app can reveal to the other party once a request is accepted, so they can arrange payment and handoff themselves.
+
+`SELL` listings carry a one-time `price`. `BORROW` listings instead carry a `price_per_day`, and `borrowings.total_amount` is computed automatically (`price_per_day × whole days`, rounding any partial day up) — the application never supplies its own total.
+
+## Two-step request/accept workflow
+
+Both borrowing and buying go through a request, then an accept/reject step, rather than committing immediately:
+
+- **Borrowing**: a request is inserted into `borrowings` as `PENDING`. The listing owner accepts it (`PENDING → BOOKED`) or rejects it (`PENDING → REJECTED`). Multiple people can hold overlapping `PENDING` requests on the same dates — the `no_overlapping_bookings` exclusion constraint only checks `BOOKED`/`ACTIVE` rows, so it's only enforced at the point the owner actually accepts one.
+- **Buying**: interest is inserted into `purchase_requests` as `PENDING`. When the seller accepts one (`PENDING → ACCEPTED`), every other `PENDING` request on that listing is automatically rejected by a trigger, a `transactions` row is created, and the listing is marked `SOLD` — all in one atomic step.
 
 ## Integrity and concurrency
 
 - Campus emails are lower-case, unique, and domain-restricted.
-- SELL listings require a non-negative price; BORROW listings require `NULL` price.
+- `SELL` listings require a non-negative `price` and no `price_per_day`; `BORROW` listings require a non-negative `price_per_day` and no `price`.
 - Foreign keys use restrictive deletion to preserve history.
-- Borrowings must use a BORROW listing and have `end_time > start_time`.
-- `btree_gist` plus the `no_overlapping_bookings` exclusion constraint rejects overlapping `BOOKED` or `ACTIVE` periods for the same item.
-- Booking periods are half-open `[start_time, end_time)`, so adjacent reservations are valid.
+- Listings cannot be edited after creation (`listings_prevent_core_edits`); status and `updated_at` are unaffected.
+- Borrowings must use a `BORROW` listing and have `end_time > start_time`. `total_amount` is computed automatically and cannot be edited directly (`borrowings_prevent_amount_tamper`).
+- `btree_gist` plus the `no_overlapping_bookings` exclusion constraint rejects overlapping `BOOKED`/`ACTIVE` periods for the same item. Booking periods are half-open `[start_time, end_time)`, so adjacent reservations are valid.
+- Status changes follow a fixed state machine, not free-form updates: borrowings only move `PENDING → BOOKED/REJECTED`, `BOOKED → ACTIVE/CANCELLED`, `ACTIVE → RETURNED`; purchase requests only move `PENDING → ACCEPTED/REJECTED/CANCELLED`; transactions only move `PENDING → COMPLETED/CANCELLED`. `responded_at` is required exactly when a borrowing or purchase request has left `PENDING`.
+- Purchase requests require an `ACTIVE` `SELL` listing, block an owner requesting their own listing, allow at most one `PENDING` and one `ACCEPTED` request per listing, and accepting one auto-rejects the other `PENDING` requests on that listing.
+- Transactions require an `ACTIVE` `SELL` listing, a `seller_id` matching the real owner, and an `amount` matching the listing price. Only one transaction can ever exist per listing.
+- Reviews require a `COMPLETED` transaction or `RETURNED` borrowing, can only be left by that deal's actual two parties, and are limited to one review per reviewer per deal.
 - Listing updates automatically refresh `updated_at`.
 - Purchase and booking workflows use PostgreSQL transactions and row locks. The database constraints remain the final integrity authority.
 
 ### CRUD sanity check output
 
-Plain `psql` session against a freshly seeded database, one statement per table (`users`, `categories`, `listings`, `listing_images`, `borrowings`, `transactions`):
+Plain `psql` session against a freshly seeded database, covering all eight tables:
 
 ```
-=> INSERT INTO users (auth_user_id, name, email) VALUES ('30000000-0000-4000-8000-000000000099', 'Sanity Check', 'sanity.check@thapar.edu') RETURNING user_id, name, email;
+=> INSERT INTO users (auth_user_id, name, email, contact_info) VALUES ('30000000-0000-4000-8000-000000000099', 'Sanity Check', 'sanity.check@thapar.edu', '@sanity.check') RETURNING user_id, name, email;
  user_id |     name     |          email
 ---------+--------------+-------------------------
-      13 | Sanity Check | sanity.check@thapar.edu
+      15 | Sanity Check | sanity.check@thapar.edu
 INSERT 0 1
 
 => SELECT category_id, name FROM categories ORDER BY category_id LIMIT 3;
@@ -50,23 +65,24 @@ INSERT 0 1
            2 | Electronics
            3 | Stationery
 
-=> SELECT listing_id, title, type, price, status FROM listings ORDER BY listing_id LIMIT 3;
- listing_id |              title              |  type  | price  | status
-------------+---------------------------------+--------+--------+--------
-          1 | Calculus: Early Transcendentals | SELL   | 450.00 | SOLD
-          2 | Electric Drill                  | BORROW |        | ACTIVE
-          3 | Scientific Calculator           | SELL   | 700.00 | ACTIVE
+=> SELECT listing_id, title, type, price, price_per_day, status FROM listings ORDER BY listing_id LIMIT 4;
+ listing_id |              title              |  type  |  price  | price_per_day | status
+------------+---------------------------------+--------+---------+----------------+--------
+          1 | Calculus: Early Transcendentals | SELL   |  450.00 |                | SOLD
+          2 | Electric Drill                  | BORROW |         |          60.00 | ACTIVE
+          3 | Scientific Calculator           | SELL   |  700.00 |                | ACTIVE
+          4 | Study Desk                      | SELL   | 1800.00 |                | SOLD
 
-=> UPDATE listings SET description = 'Sanity check update' WHERE listing_id = 1 RETURNING listing_id, description, updated_at;
- listing_id |     description     |          updated_at
-------------+---------------------+-------------------------------
-          1 | Sanity check update | 2026-08-16 06:12:31.231329+00
+=> UPDATE listings SET status = 'REMOVED' WHERE listing_id = 11 RETURNING listing_id, status, updated_at;
+ listing_id | status  |          updated_at
+------------+---------+-------------------------------
+         11 | REMOVED | 2026-08-17 03:46:17.395074+00
 UPDATE 1
 
 => DELETE FROM users WHERE email = 'sanity.check@thapar.edu' RETURNING user_id, email;
  user_id |          email
 ---------+-------------------------
-      13 | sanity.check@thapar.edu
+      15 | sanity.check@thapar.edu
 DELETE 1
 
 => SELECT listing_id, image_url FROM listing_images ORDER BY image_id LIMIT 2;
@@ -75,17 +91,31 @@ DELETE 1
           1 | listing-images/calculus-textbook-1.jpg
           2 | listing-images/electric-drill-1.jpg
 
-=> SELECT borrowing_id, listing_id, start_time, end_time, status FROM borrowings ORDER BY borrowing_id LIMIT 2;
- borrowing_id | listing_id |       start_time       |        end_time        | status
---------------+------------+------------------------+------------------------+--------
-            1 |          2 | 2027-08-15 10:00:00+00 | 2027-08-17 10:00:00+00 | BOOKED
-            2 |          2 | 2027-08-17 10:00:00+00 | 2027-08-19 10:00:00+00 | BOOKED
+=> SELECT borrowing_id, listing_id, total_amount, status FROM borrowings ORDER BY borrowing_id LIMIT 3;
+ borrowing_id | listing_id | total_amount | status
+--------------+------------+--------------+--------
+            1 |          2 |       120.00 | BOOKED
+            2 |          2 |       120.00 | BOOKED
+            3 |          2 |       120.00 | BOOKED
 
 => SELECT transaction_id, listing_id, amount, status FROM transactions ORDER BY transaction_id LIMIT 2;
  transaction_id | listing_id | amount  |  status
 ----------------+------------+---------+-----------
               1 |          1 |  450.00 | COMPLETED
               2 |          4 | 1800.00 | COMPLETED
+
+=> SELECT request_id, listing_id, buyer_id, status FROM purchase_requests ORDER BY request_id LIMIT 3;
+ request_id | listing_id | buyer_id |  status
+------------+------------+----------+----------
+          1 |          1 |        2 | ACCEPTED
+          2 |          4 |        7 | ACCEPTED
+          3 |          5 |        8 | ACCEPTED
+
+=> SELECT review_id, reviewer_id, reviewee_id, rating FROM reviews ORDER BY review_id LIMIT 2;
+ review_id | reviewer_id | reviewee_id | rating
+-----------+-------------+-------------+--------
+         1 |           2 |           1 |      5
+         2 |           1 |           2 |      5
 ```
 
 `npm run db:test` output (the JavaScript integrity suite, `database/run.js test`):
@@ -96,16 +126,28 @@ PASS expected rejection: non-campus email (23514)
 PASS expected rejection: invalid listing type (23514)
 PASS expected rejection: negative SELL price (23514)
 PASS expected rejection: priced BORROW listing (23514)
+PASS expected rejection: BORROW listing missing price_per_day (23514)
 PASS expected rejection: missing SELL price (23514)
 PASS expected rejection: missing owner foreign key (23503)
 PASS expected rejection: invalid booking period (23514)
 PASS expected rejection: borrowing SELL listing (23514)
-PASS expected rejection: overlapping booking (23P01)
-PASS expected rejection: identical booking range (23P01)
+PASS expected rejection: overlapping BOOKED booking (23P01)
+PASS expected rejection: identical BOOKED range (23P01)
 PASS expected rejection: invalid listing status (23514)
-PASS adjacent booking and updated_at trigger
+PASS expected rejection: invalid borrowing status (23514)
+PASS expected rejection: invalid transaction status (23514)
+PASS expected rejection: edit listing price after creation (23514)
+PASS expected rejection: purchase request on own listing (23514)
+PASS expected rejection: purchase request on BORROW listing (23514)
+PASS expected rejection: duplicate pending purchase request (23505)
+PASS expected rejection: review of a PENDING transaction (23514)
+PASS expected rejection: review by someone not party to the deal (23514)
+PASS expected rejection: duplicate review of the same deal (23505)
+PASS adjacent booking, auto-priced total_amount, and updated_at trigger
 All JavaScript integrity tests passed.
 ```
+
+The standalone SQL equivalent of these checks, runnable directly in `psql`, is in `database/tests/integrity_tests.sql`.
 
 ### Concurrency test setup
 
@@ -113,34 +155,24 @@ The concurrency tests demonstrate what happens when two users try to interact wi
 
 #### Experiment 1: booking overlap
 
-Simulates two users trying to book the same drill at overlapping times.
+Simulates two users both trying to get a `BOOKED` reservation on the same item for overlapping dates. (In the real request/accept flow this is the moment an owner *accepts* two overlapping `PENDING` requests — modeled here as two direct `BOOKED` inserts to isolate the constraint being tested.)
 
 **Session A** — start a transaction and lock the listing:
 
 ```sql
 BEGIN;
 
-SELECT *
+SELECT listing_id
 FROM listings
-WHERE listing_id = 2
+WHERE listing_id = 6
 FOR UPDATE;
 ```
 
 Then create the first booking without committing yet:
 
 ```sql
-INSERT INTO borrowings (
-    listing_id,
-    borrower_id,
-    start_time,
-    end_time
-)
-VALUES (
-    2,
-    7,
-    '2027-10-01 10:00+00',
-    '2027-10-03 10:00+00'
-);
+INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at)
+VALUES (6, 3, '2028-01-05 10:00+00', '2028-01-07 10:00+00', 'BOOKED', NOW());
 ```
 
 Keep this transaction open.
@@ -150,45 +182,25 @@ Keep this transaction open.
 ```sql
 BEGIN;
 
-SELECT *
+SELECT listing_id
 FROM listings
-WHERE listing_id = 2
+WHERE listing_id = 6
 FOR UPDATE;
 ```
 
-Session B will wait because Session A currently holds the row lock.
-
-Now commit Session A:
+Session B waits because Session A currently holds the row lock. Once Session A commits, Session B's `SELECT` returns and it attempts an overlapping booking:
 
 ```sql
-COMMIT;
+COMMIT; -- Session A
+
+INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at)
+VALUES (6, 4, '2028-01-06 10:00+00', '2028-01-08 10:00+00', 'BOOKED', NOW());
 ```
-
-Session B can continue. Try creating an overlapping booking:
-
-```sql
-INSERT INTO borrowings (
-    listing_id,
-    borrower_id,
-    start_time,
-    end_time
-)
-VALUES (
-    2,
-    8,
-    '2027-10-02 10:00+00',
-    '2027-10-04 10:00+00'
-);
-```
-
-PostgreSQL rejects the operation because the requested period overlaps the existing booking, through the `no_overlapping_bookings` exclusion constraint:
 
 ```
 ERROR:  conflicting key value violates exclusion constraint "no_overlapping_bookings"
-DETAIL:  Key (listing_id, tstzrange(start_time, end_time, '[)'::text))=(2, ["2027-10-02 10:00:00+00","2027-10-04 10:00:00+00")) conflicts with existing key (listing_id, tstzrange(start_time, end_time, '[)'::text))=(2, ["2027-10-01 10:00:00+00","2027-10-03 10:00:00+00")).
+DETAIL:  Key (listing_id, tstzrange(start_time, end_time, '[)'::text))=(6, ["2028-01-06 10:00:00+00","2028-01-08 10:00:00+00")) conflicts with existing key (listing_id, tstzrange(start_time, end_time, '[)'::text))=(6, ["2028-01-05 10:00:00+00","2028-01-07 10:00:00+00")).
 ```
-
-The transaction can then be rolled back:
 
 ```sql
 ROLLBACK;
@@ -197,13 +209,13 @@ ROLLBACK;
 This demonstrates two levels of concurrency protection:
 
 1. `SELECT ... FOR UPDATE` serializes operations that need to modify the same listing.
-2. The PostgreSQL exclusion constraint independently guarantees that overlapping `BOOKED` or `ACTIVE` reservations cannot exist.
+2. The PostgreSQL exclusion constraint independently guarantees that overlapping `BOOKED`/`ACTIVE` reservations cannot exist — the real safety net, since the row lock alone only orders the two sessions.
 
 #### Experiment 2: purchase race
 
-Simulates two buyers trying to purchase the same `SELL` listing at the same time. Unlike the booking case, there's no exclusion constraint here — the second buyer has to be turned away by checking the listing's status, so this experiment shows what the row lock alone protects.
+Simulates two buyers with `PENDING` purchase requests on the same `SELL` listing, both trying to be the one the seller accepts. Unlike the booking case, there's no exclusion constraint here — the second session has to be turned away by checking the listing's status, so this experiment shows what the row lock alone protects.
 
-**Session A** — start a transaction and lock the listing before reading its status:
+**Session A** — lock the listing before reading its status:
 
 ```sql
 BEGIN;
@@ -220,18 +232,20 @@ FOR UPDATE;
           7 | ACTIVE
 ```
 
-Record the sale and mark the listing sold, then commit:
+Accept the request, record the sale, and mark the listing sold, then commit:
 
 ```sql
+UPDATE purchase_requests SET status = 'ACCEPTED', responded_at = NOW() WHERE request_id = 6;
+
 INSERT INTO transactions (listing_id, buyer_id, seller_id, amount)
-VALUES (7, 2, 7, 900.00);
+VALUES (7, 9, 7, 900.00);
 
 UPDATE listings SET status = 'SOLD' WHERE listing_id = 7;
 
 COMMIT;
 ```
 
-**Session B** — in a second session, started concurrently with Session A, issue the same lock request:
+**Session B** — started concurrently with Session A, issues the same lock request:
 
 ```sql
 BEGIN;
@@ -250,13 +264,13 @@ Session B queues behind Session A's row lock and does not return until Session A
           7 | SOLD
 ```
 
-Session B now sees `status = SOLD` and must roll back instead of inserting a second transaction:
+Session B now sees `status = SOLD` and must roll back instead of accepting its own request:
 
 ```sql
 ROLLBACK;
 ```
 
-The row lock is what stops both sessions from reading `ACTIVE` and racing each other into the `transactions` table; the application logic then makes the reject decision based on the status it saw. The unique index on `transactions(listing_id)` (see `database/migrations/007_constraints_and_indexes.sql`) is the backstop in case application logic ever inserts anyway.
+The row lock is what stops both sessions from reading `ACTIVE` and racing each other into `transactions`; application logic then makes the reject decision based on the status it saw. The unique index on `transactions(listing_id)` (see `database/migrations/009_constraints_and_indexes.sql`) is the backstop in case application logic ever inserts anyway.
 
 The complete concurrency examples are available in:
 
@@ -276,7 +290,7 @@ $env:DATABASE_URL = 'postgresql://postgres:YOUR_PASSWORD@127.0.0.1:5432/campus_m
 npm run db:setup
 ```
 
-`db:setup` runs every migration in order and loads the dummy users, categories, listings, images, borrowings, and transactions. Run it only against an empty database.
+`db:setup` runs every migration in order and loads the demo users, categories, listings, images, borrowings, transactions, purchase requests, and reviews. Run it only against an empty database.
 
 Run the JavaScript integrity suite:
 
@@ -290,6 +304,6 @@ Open the terminal UI:
 npm run db:cli
 ```
 
-The menu supports listing browsing, listing details, user lookup, borrowing, return/cancellation, atomic purchases, transaction completion, and transaction history.
+The menu supports: active listings, listing details, requesting to borrow, accepting/rejecting a borrow request, returning/cancelling a booking, expressing interest to buy, accepting/rejecting a purchase request, completing a transaction, transaction history, leaving a review, and listing users.
 
-`database/queries/` contains standalone SQL examples, and `database/queries/concurrency.sql` documents two-session concurrency experiments for learning and manual verification.
+`database/queries/` contains standalone SQL examples for every table, and `database/queries/concurrency.sql` documents the two-session concurrency experiments above for manual verification.

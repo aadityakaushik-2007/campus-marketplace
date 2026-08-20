@@ -94,6 +94,10 @@ async function tests() {
       "INSERT INTO listings (owner_id, category_id, title, type, price) VALUES (1, 1, 'Bad', 'BORROW', 1)"
     ));
 
+    await expectFailure(client, 'BORROW listing missing price_per_day', () => client.query(
+      "INSERT INTO listings (owner_id, category_id, title, type, price_per_day) VALUES (1, 1, 'Bad', 'BORROW', NULL)"
+    ));
+
     await expectFailure(client, 'missing SELL price', () => client.query(
       "INSERT INTO listings (owner_id, category_id, title, type, price) VALUES (1, 1, 'Bad', 'SELL', NULL)"
     ));
@@ -110,32 +114,76 @@ async function tests() {
       "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (3, 1, '2027-11-02 10:00+00', '2027-11-03 10:00+00')"
     ));
 
-    await expectFailure(client, 'overlapping booking', () => client.query(
-      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 1, '2027-08-16 10:00+00', '2027-08-18 10:00+00')"
+    // overlap is only checked for BOOKED/ACTIVE rows, so these two explicitly
+    // request BOOKED (with responded_at set, satisfying borrowings_responded_at_check)
+    // to actually exercise the exclusion constraint rather than a different check
+    await expectFailure(client, 'overlapping BOOKED booking', () => client.query(
+      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES (2, 1, '2027-08-16 10:00+00', '2027-08-18 10:00+00', 'BOOKED', NOW())"
     ));
 
-    await expectFailure(client, 'identical booking range', () => client.query(
-      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 1, '2027-08-15 10:00+00', '2027-08-17 10:00+00')"
+    await expectFailure(client, 'identical BOOKED range', () => client.query(
+      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES (2, 1, '2027-08-15 10:00+00', '2027-08-17 10:00+00', 'BOOKED', NOW())"
     ));
 
     await expectFailure(client, 'invalid listing status', () => client.query(
       "INSERT INTO listings (owner_id, category_id, title, type, price, status) VALUES (1, 1, 'Bad', 'SELL', 1, 'ARCHIVED')"
     ));
 
+    await expectFailure(client, 'invalid borrowing status', () => client.query(
+      "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status) VALUES (2, 1, '2027-11-04 10:00+00', '2027-11-05 10:00+00', 'LOST')"
+    ));
+
+    await expectFailure(client, 'invalid transaction status', () => client.query(
+      "INSERT INTO transactions (listing_id, buyer_id, seller_id, amount, status) VALUES (3, 1, 3, 700, 'PAID')"
+    ));
+
+    await expectFailure(client, 'edit listing price after creation', () => client.query(
+      "UPDATE listings SET price = 1.00 WHERE listing_id = 3"
+    ));
+
+    await expectFailure(client, 'purchase request on own listing', () => client.query(
+      'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (3, 3)'
+    ));
+
+    await expectFailure(client, 'purchase request on BORROW listing', () => client.query(
+      'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (2, 1)'
+    ));
+
+    await expectFailure(client, 'duplicate pending purchase request', () => client.query(
+      'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES (3, 4)'
+    ));
+
+    await expectFailure(client, 'review of a PENDING transaction', () => client.query(
+      "INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (3, 8, 5, 5)"
+    ));
+
+    await expectFailure(client, 'review by someone not party to the deal', () => client.query(
+      'INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (1, 9, 1, 5)'
+    ));
+
+    await expectFailure(client, 'duplicate review of the same deal', () => client.query(
+      'INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating) VALUES (1, 2, 1, 1)'
+    ));
+
     await client.query('BEGIN');
     try {
-      // these two operations should succeed: adjacent bookings are allowed,
-      // and the listing trigger should update updated_at automatically
-      await client.query(
-        "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 9, '2027-08-19 10:00+00', '2027-08-20 10:00+00')"
+      // these operations should succeed: adjacent bookings are allowed,
+      // borrow pricing is computed automatically, and the listing trigger
+      // updates updated_at automatically
+      const priced = await client.query(
+        "INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES (2, 9, '2027-08-19 10:00+00', '2027-08-20 10:00+00') RETURNING total_amount, status"
       );
+
+      if (Number(priced.rows[0].total_amount) !== 60 || priced.rows[0].status !== 'PENDING') {
+        throw new Error('borrowing was not auto-priced/defaulted as expected');
+      }
 
       const before = await client.query(
         'SELECT updated_at FROM listings WHERE listing_id = 3'
       );
 
       await client.query(
-        "UPDATE listings SET description = 'temporary trigger test' WHERE listing_id = 3"
+        "UPDATE listings SET status = 'REMOVED' WHERE listing_id = 3"
       );
 
       const after = await client.query(
@@ -146,7 +194,7 @@ async function tests() {
         throw new Error('updated_at did not advance');
       }
 
-      console.log('PASS adjacent booking and updated_at trigger');
+      console.log('PASS adjacent booking, auto-priced total_amount, and updated_at trigger');
     } finally {
       await client.query('ROLLBACK');
     }
@@ -180,8 +228,12 @@ async function cli() {
     console.log('\nCampus Marketplace database CLI — demo data should be loaded with npm run db:setup.');
 
     for (;;) {
-      console.log('\n1) Active listings  2) Listing details  3) Book item  4) Return/cancel booking');
-      console.log('5) Purchase item  6) Complete transaction  7) Transaction history  8) List users  0) Exit');
+      console.log('\n1) Active listings          2) Listing details');
+      console.log('3) Request to borrow        4) Respond to borrow request');
+      console.log('5) Return/cancel booking    6) Express interest to buy');
+      console.log('7) Respond to purchase request  8) Complete transaction');
+      console.log('9) Transaction history      10) Leave a review');
+      console.log('11) List users              0) Exit');
 
       const choice = (await rl.question('Choose an operation: ')).trim();
 
@@ -190,7 +242,7 @@ async function cli() {
 
         if (choice === '1') {
           const result = await client.query(
-            "SELECT l.listing_id, l.title, l.type, l.price, c.name AS category, u.name AS owner FROM listings l JOIN categories c USING (category_id) JOIN users u ON u.user_id = l.owner_id WHERE l.status = 'ACTIVE' ORDER BY l.listing_id"
+            "SELECT l.listing_id, l.title, l.type, l.price, l.price_per_day, c.name AS category, u.name AS owner FROM listings l JOIN categories c USING (category_id) JOIN users u ON u.user_id = l.owner_id WHERE l.status = 'ACTIVE' ORDER BY l.listing_id"
           );
           printRows(result.rows);
 
@@ -208,29 +260,35 @@ async function cli() {
           const start = await rl.question('Start time (ISO, e.g. 2027-10-01T10:00:00Z): ');
           const end = await rl.question('End time (ISO, e.g. 2027-10-03T10:00:00Z): ');
 
-          await client.query('BEGIN');
-
-          try {
-            // lock the listing before creating a booking so concurrent operations
-            // on the same listing are handled safely
-            await client.query(
-              'SELECT listing_id FROM listings WHERE listing_id = $1 FOR UPDATE',
-              [listingId]
-            );
-
-            const result = await client.query(
-              'INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES ($1, $2, $3, $4) RETURNING borrowing_id, status',
+          // total_amount is computed automatically from the listing's
+          // price_per_day; the request starts PENDING until the owner responds
+          printRows(
+            (await client.query(
+              'INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time) VALUES ($1, $2, $3, $4) RETURNING borrowing_id, total_amount, status',
               [listingId, borrowerId, start, end]
-            );
-
-            await client.query('COMMIT');
-            printRows(result.rows);
-          } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-          }
+            )).rows
+          );
 
         } else if (choice === '4') {
+          const borrowingId = await askNumber(rl, 'Borrowing ID: ');
+          const decision = (await rl.question('ACCEPT or REJECT: ')).trim().toUpperCase();
+
+          if (!['ACCEPT', 'REJECT'].includes(decision)) {
+            throw new Error('Decision must be ACCEPT or REJECT.');
+          }
+
+          const newStatus = decision === 'ACCEPT' ? 'BOOKED' : 'REJECTED';
+
+          // the no_overlapping_bookings exclusion constraint is what actually
+          // rejects an ACCEPT if it would overlap an already-BOOKED period
+          printRows(
+            (await client.query(
+              "UPDATE borrowings SET status = $1, responded_at = NOW() WHERE borrowing_id = $2 AND status = 'PENDING' RETURNING borrowing_id, status, total_amount",
+              [newStatus, borrowingId]
+            )).rows
+          );
+
+        } else if (choice === '5') {
           const borrowingId = await askNumber(rl, 'Borrowing ID: ');
           const status = (await rl.question('RETURNED or CANCELLED: ')).trim().toUpperCase();
 
@@ -245,47 +303,75 @@ async function cli() {
             )).rows
           );
 
-        } else if (choice === '5') {
+        } else if (choice === '6') {
           const listingId = await askNumber(rl, 'ACTIVE SELL listing ID: ');
           const buyerId = await askNumber(rl, 'Buyer user ID: ');
 
-          // keep the transaction creation and SOLD status change atomic
-          await client.query('BEGIN');
+          // just records interest; nothing is committed until the seller accepts
+          printRows(
+            (await client.query(
+              'INSERT INTO purchase_requests (listing_id, buyer_id) VALUES ($1, $2) RETURNING request_id, status',
+              [listingId, buyerId]
+            )).rows
+          );
 
-          try {
-            const listing = await client.query(
-              "SELECT listing_id, owner_id, price, type, status FROM listings WHERE listing_id = $1 FOR UPDATE",
-              [listingId]
-            );
+        } else if (choice === '7') {
+          const requestId = await askNumber(rl, 'Purchase request ID: ');
+          const decision = (await rl.question('ACCEPT or REJECT: ')).trim().toUpperCase();
 
-            if (
-              listing.rowCount !== 1 ||
-              listing.rows[0].type !== 'SELL' ||
-              listing.rows[0].status !== 'ACTIVE'
-            ) {
-              throw new Error('Listing must be an ACTIVE SELL listing.');
-            }
-
-            const row = listing.rows[0];
-
-            const result = await client.query(
-              'INSERT INTO transactions (listing_id, buyer_id, seller_id, amount) VALUES ($1, $2, $3, $4) RETURNING transaction_id, status, amount',
-              [row.listing_id, buyerId, row.owner_id, row.price]
-            );
-
-            await client.query(
-              "UPDATE listings SET status = 'SOLD' WHERE listing_id = $1",
-              [listingId]
-            );
-
-            await client.query('COMMIT');
-            printRows(result.rows);
-          } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
+          if (!['ACCEPT', 'REJECT'].includes(decision)) {
+            throw new Error('Decision must be ACCEPT or REJECT.');
           }
 
-        } else if (choice === '6') {
+          if (decision === 'REJECT') {
+            printRows(
+              (await client.query(
+                "UPDATE purchase_requests SET status = 'REJECTED', responded_at = NOW() WHERE request_id = $1 AND status = 'PENDING' RETURNING request_id, status",
+                [requestId]
+              )).rows
+            );
+          } else {
+            // accepting is kept atomic: mark the request ACCEPTED (which
+            // auto-rejects any other pending requests on the same listing),
+            // create the transaction, and mark the listing SOLD together
+            await client.query('BEGIN');
+
+            try {
+              const request = await client.query(
+                "UPDATE purchase_requests SET status = 'ACCEPTED', responded_at = NOW() WHERE request_id = $1 AND status = 'PENDING' RETURNING listing_id, buyer_id",
+                [requestId]
+              );
+
+              if (request.rowCount !== 1) {
+                throw new Error('Purchase request must exist and be PENDING.');
+              }
+
+              const { listing_id: listingId, buyer_id: buyerId } = request.rows[0];
+
+              const listing = await client.query(
+                'SELECT owner_id, price FROM listings WHERE listing_id = $1 FOR UPDATE',
+                [listingId]
+              );
+
+              const result = await client.query(
+                'INSERT INTO transactions (listing_id, buyer_id, seller_id, amount) VALUES ($1, $2, $3, $4) RETURNING transaction_id, status, amount',
+                [listingId, buyerId, listing.rows[0].owner_id, listing.rows[0].price]
+              );
+
+              await client.query(
+                "UPDATE listings SET status = 'SOLD' WHERE listing_id = $1",
+                [listingId]
+              );
+
+              await client.query('COMMIT');
+              printRows(result.rows);
+            } catch (error) {
+              await client.query('ROLLBACK');
+              throw error;
+            }
+          }
+
+        } else if (choice === '8') {
           const transactionId = await askNumber(rl, 'Transaction ID: ');
 
           printRows(
@@ -295,17 +381,44 @@ async function cli() {
             )).rows
           );
 
-        } else if (choice === '7') {
+        } else if (choice === '9') {
           printRows(
             (await client.query(
               'SELECT t.transaction_id, l.title, buyer.name AS buyer, seller.name AS seller, t.amount, t.status, t.created_at, t.completed_at FROM transactions t JOIN listings l USING (listing_id) JOIN users buyer ON buyer.user_id = t.buyer_id JOIN users seller ON seller.user_id = t.seller_id ORDER BY t.created_at DESC'
             )).rows
           );
 
-        } else if (choice === '8') {
+        } else if (choice === '10') {
+          const dealType = (await rl.question('Review a (T)ransaction or (B)orrowing: ')).trim().toUpperCase();
+          const reviewerId = await askNumber(rl, 'Reviewer user ID: ');
+          const revieweeId = await askNumber(rl, 'Reviewee user ID: ');
+          const rating = await askNumber(rl, 'Rating (1-5): ');
+          const comment = await rl.question('Comment (optional): ');
+
+          if (dealType === 'T') {
+            const transactionId = await askNumber(rl, 'Transaction ID: ');
+            printRows(
+              (await client.query(
+                'INSERT INTO reviews (transaction_id, reviewer_id, reviewee_id, rating, comment) VALUES ($1, $2, $3, $4, $5) RETURNING review_id, rating',
+                [transactionId, reviewerId, revieweeId, rating, comment || null]
+              )).rows
+            );
+          } else if (dealType === 'B') {
+            const borrowingId = await askNumber(rl, 'Borrowing ID: ');
+            printRows(
+              (await client.query(
+                'INSERT INTO reviews (borrowing_id, reviewer_id, reviewee_id, rating, comment) VALUES ($1, $2, $3, $4, $5) RETURNING review_id, rating',
+                [borrowingId, reviewerId, revieweeId, rating, comment || null]
+              )).rows
+            );
+          } else {
+            throw new Error('Enter T for transaction or B for borrowing.');
+          }
+
+        } else if (choice === '11') {
           printRows(
             (await client.query(
-              'SELECT user_id, name, email, created_at FROM users ORDER BY user_id'
+              'SELECT user_id, name, email, contact_info, created_at FROM users ORDER BY user_id'
             )).rows
           );
 

@@ -5,6 +5,7 @@ CREATE TABLE users (
     auth_user_id UUID NOT NULL,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
+    contact_info TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT users_auth_user_id_unique UNIQUE (auth_user_id),
@@ -16,7 +17,13 @@ CREATE TABLE users (
     CONSTRAINT users_email_normalized_check CHECK (email = lower(email)),
 
     -- Only Thapar email addresses are allowed to register.
-    CONSTRAINT users_campus_email_check CHECK (email LIKE '%@thapar.edu')
+    CONSTRAINT users_campus_email_check CHECK (email LIKE '%@thapar.edu'),
+
+    -- Optional handle (phone/Instagram/etc) so a matched buyer/seller or
+    -- borrower/owner can arrange their own meetup and payment off-platform.
+    -- The app only reveals this to the other party once a request has been
+    -- accepted -- that visibility rule lives in the app, not the database.
+    CONSTRAINT users_contact_info_not_blank CHECK (contact_info IS NULL OR btrim(contact_info) <> '')
 );
 
 -- Passwords and other authentication credentials are intentionally not stored here.

@@ -15,14 +15,14 @@ WHERE c.name = 'Electronics'
   AND l.status = 'ACTIVE';
 
 
--- show active items that are being sold
+-- show active items that are being sold (price is the one-time sale price)
 SELECT *
 FROM listings
 WHERE type = 'SELL'
   AND status = 'ACTIVE';
 
 
--- show active items available for borrowing
+-- show active items available for borrowing (price_per_day is the daily rate)
 SELECT *
 FROM listings
 WHERE type = 'BORROW'
@@ -36,16 +36,26 @@ WHERE owner_id = 1
 ORDER BY created_at DESC;
 
 
--- update the price of a selling listing
+-- listings can't be edited after creation (listings_prevent_core_edits).
+-- to change price, description, or category, remove the old listing and
+-- create a new one instead -- this also keeps a clean history rather than
+-- silently rewriting what an interested buyer originally saw.
+UPDATE listings
+SET status = 'REMOVED'
+WHERE listing_id = 18
+  AND owner_id = 8
+  AND status = 'ACTIVE';
+
+INSERT INTO listings (owner_id, category_id, title, description, type, price)
+VALUES (8, 3, 'Whiteboard Markers (relisted)', 'Set of twelve assorted colours, price dropped.', 'SELL', 150.00);
+
+
+-- this UPDATE is rejected: price is a core field and cannot change after creation
+BEGIN;
 UPDATE listings
 SET price = 500.00
-WHERE listing_id = 3
-  AND type = 'SELL';
-
--- update the description of a listing
-UPDATE listings
-SET description = 'Updated description.'
 WHERE listing_id = 3;
+ROLLBACK;
 
 
 -- mark a listing as sold instead of deleting it so its transaction history is preserved
