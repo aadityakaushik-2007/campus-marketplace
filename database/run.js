@@ -1,7 +1,12 @@
-import fs from 'node:fs/promises';
+import dotenv from 'dotenv';
 import path from 'node:path';
-import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+dotenv.config({
+    path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env')
+});
+import fs from 'node:fs/promises';
+import process from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import pg from 'pg';
 
@@ -75,11 +80,11 @@ async function tests() {
 
     // test the database constraints by deliberately trying invalid operations
     await expectFailure(client, 'duplicate email', () => client.query(
-      "INSERT INTO users (auth_user_id, name, email) VALUES ('20000000-0000-4000-8000-000000000001', 'Duplicate', 'aarav.sharma@thapar.edu')"
+      "INSERT INTO users (auth_user_id, name, email) VALUES ('auth0|test-duplicate', 'Duplicate', 'aarav.sharma@thapar.edu')"
     ));
 
     await expectFailure(client, 'non-campus email', () => client.query(
-      "INSERT INTO users (auth_user_id, name, email) VALUES ('20000000-0000-4000-8000-000000000002', 'Outside', 'outside@example.com')"
+      "INSERT INTO users (auth_user_id, name, email) VALUES ('auth0|test-outside-campus', 'Outside', 'outside@example.com')"
     ));
 
     await expectFailure(client, 'invalid listing type', () => client.query(

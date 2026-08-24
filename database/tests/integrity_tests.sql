@@ -4,13 +4,13 @@
 -- 1. Duplicate email
 BEGIN;
 INSERT INTO users (auth_user_id, name, email) VALUES
-('20000000-0000-4000-8000-000000000001', 'Duplicate', 'aarav.sharma@thapar.edu');
+('auth0|test-duplicate', 'Duplicate', 'aarav.sharma@thapar.edu');
 ROLLBACK;
 
 -- 2. Invalid campus email
 BEGIN;
 INSERT INTO users (auth_user_id, name, email) VALUES
-('20000000-0000-4000-8000-000000000002', 'Outside', 'outside@example.com');
+('auth0|test-outside-campus', 'Outside', 'outside@example.com');
 ROLLBACK;
 
 -- 3. Invalid listing type

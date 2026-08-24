@@ -1,15 +1,15 @@
 -- Demo data only. Campus addresses use the configured thapar.edu domain.
 INSERT INTO users (auth_user_id, name, email, contact_info) VALUES
-('00000000-0000-4000-8000-000000000001', 'Aarav Sharma', 'aarav.sharma@thapar.edu', '@aarav.codes'),
-('00000000-0000-4000-8000-000000000002', 'Diya Patel', 'diya.patel@thapar.edu', '@diya.p'),
-('00000000-0000-4000-8000-000000000003', 'Kabir Singh', 'kabir.singh@thapar.edu', '+91 98765 43001'),
-('00000000-0000-4000-8000-000000000004', 'Meera Nair', 'meera.nair@thapar.edu', '@meera.nair'),
-('00000000-0000-4000-8000-000000000005', 'Rohan Gupta', 'rohan.gupta@thapar.edu', '+91 98765 43005'),
-('00000000-0000-4000-8000-000000000006', 'Ananya Iyer', 'ananya.iyer@thapar.edu', '@ananya.iyer'),
-('00000000-0000-4000-8000-000000000007', 'Vivaan Rao', 'vivaan.rao@thapar.edu', '+91 98765 43007'),
-('00000000-0000-4000-8000-000000000008', 'Isha Kapoor', 'isha.kapoor@thapar.edu', '@isha.kapoor'),
-('00000000-0000-4000-8000-000000000009', 'Arjun Menon', 'arjun.menon@thapar.edu', NULL),
-('00000000-0000-4000-8000-000000000010', 'Sana Khan', 'sana.khan@thapar.edu', '@sana.khan');
+('auth0|demo-user-01', 'Aarav Sharma', 'aarav.sharma@thapar.edu', '@aarav.codes'),
+('auth0|demo-user-02', 'Diya Patel', 'diya.patel@thapar.edu', '@diya.p'),
+('auth0|demo-user-03', 'Kabir Singh', 'kabir.singh@thapar.edu', '+91 98765 43001'),
+('auth0|demo-user-04', 'Meera Nair', 'meera.nair@thapar.edu', '@meera.nair'),
+('auth0|demo-user-05', 'Rohan Gupta', 'rohan.gupta@thapar.edu', '+91 98765 43005'),
+('auth0|demo-user-06', 'Ananya Iyer', 'ananya.iyer@thapar.edu', '@ananya.iyer'),
+('auth0|demo-user-07', 'Vivaan Rao', 'vivaan.rao@thapar.edu', '+91 98765 43007'),
+('auth0|demo-user-08', 'Isha Kapoor', 'isha.kapoor@thapar.edu', '@isha.kapoor'),
+('auth0|demo-user-09', 'Arjun Menon', 'arjun.menon@thapar.edu', NULL),
+('auth0|demo-user-10', 'Sana Khan', 'sana.khan@thapar.edu', '@sana.khan');
 
 INSERT INTO categories (name) VALUES
 ('Books'), ('Electronics'), ('Stationery'), ('Furniture'), ('Clothing'), ('Other');
@@ -52,22 +52,69 @@ INSERT INTO listing_images (listing_id, image_url) VALUES
 -- (price_per_day x whole days), so it's never listed as an explicit value here.
 -- Half-open [) ranges make the first two Drill bookings adjacent and valid.
 INSERT INTO borrowings (listing_id, borrower_id, start_time, end_time, status, responded_at) VALUES
-(2, 1, '2027-08-15 10:00:00+00', '2027-08-17 10:00:00+00', 'BOOKED', '2027-08-14 09:00:00+00'),
-(2, 3, '2027-08-17 10:00:00+00', '2027-08-19 10:00:00+00', 'BOOKED', '2027-08-16 09:00:00+00'),
-(2, 4, '2027-08-20 10:00:00+00', '2027-08-22 10:00:00+00', 'BOOKED', '2027-08-19 09:00:00+00'),
-(6, 5, '2027-09-01 09:00:00+00', '2027-09-03 17:00:00+00', 'ACTIVE', '2027-08-30 08:00:00+00'),
-(8, 6, '2027-09-05 12:00:00+00', '2027-09-06 12:00:00+00', 'RETURNED', '2027-09-04 10:00:00+00'),
-(12, 9, '2027-09-10 08:00:00+00', '2027-09-11 20:00:00+00', 'CANCELLED', '2027-09-09 08:00:00+00'),
-(14, 10, '2027-09-15 18:00:00+00', '2027-09-16 22:00:00+00', 'BOOKED', '2027-09-14 08:00:00+00'),
-(17, 2, '2027-09-20 07:00:00+00', '2027-09-21 19:00:00+00', 'BOOKED', '2027-09-19 12:00:00+00'),
--- Requests still awaiting the owner's decision.
+(2, 1, '2027-08-15 10:00:00+00', '2027-08-17 10:00:00+00', 'PENDING', NULL),
+(2, 3, '2027-08-17 10:00:00+00', '2027-08-19 10:00:00+00', 'PENDING', NULL),
+(2, 4, '2027-08-20 10:00:00+00', '2027-08-22 10:00:00+00', 'PENDING', NULL),
+(6, 5, '2027-09-01 09:00:00+00', '2027-09-03 17:00:00+00', 'PENDING', NULL),
+(8, 6, '2027-09-05 12:00:00+00', '2027-09-06 12:00:00+00', 'PENDING', NULL),
+(12, 9, '2027-09-10 08:00:00+00', '2027-09-11 20:00:00+00', 'PENDING', NULL),
+(14, 10, '2027-09-15 18:00:00+00', '2027-09-16 22:00:00+00', 'PENDING', NULL),
+(17, 2, '2027-09-20 07:00:00+00', '2027-09-21 19:00:00+00', 'PENDING', NULL),
 (6, 7, '2027-10-01 09:00:00+00', '2027-10-02 09:00:00+00', 'PENDING', NULL),
--- An overlapping second request for the same window -- coexists fine while PENDING,
--- since no_overlapping_bookings only checks BOOKED/ACTIVE rows.
 (6, 8, '2027-10-01 12:00:00+00', '2027-10-03 12:00:00+00', 'PENDING', NULL),
--- A request the owner already turned down.
-(14, 1, '2027-09-15 18:00:00+00', '2027-09-17 10:00:00+00', 'REJECTED', '2027-09-14 09:00:00+00');
+(14, 1, '2027-09-15 18:00:00+00', '2027-09-17 10:00:00+00', 'PENDING', NULL);
 
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-08-14 09:00:00+00'
+WHERE borrowing_id = 1;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-08-16 09:00:00+00'
+WHERE borrowing_id = 2;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-08-19 09:00:00+00'
+WHERE borrowing_id = 3;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-08-30 08:00:00+00:00'
+WHERE borrowing_id = 4;
+
+UPDATE borrowings
+SET status = 'ACTIVE'
+WHERE borrowing_id = 4;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-09-04 10:00:00+00'
+WHERE borrowing_id = 5;
+
+UPDATE borrowings
+SET status = 'ACTIVE'
+WHERE borrowing_id = 5;
+
+UPDATE borrowings
+SET status = 'RETURNED'
+WHERE borrowing_id = 5;
+
+UPDATE borrowings
+SET status = 'REJECTED',
+    responded_at = '2027-09-09 08:00:00+00'
+WHERE borrowing_id = 6;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-09-14 08:00:00+00'
+WHERE borrowing_id = 7;
+
+UPDATE borrowings
+SET status = 'BOOKED',
+    responded_at = '2027-09-19 12:00:00+00'
+WHERE borrowing_id = 8;
 -- Purchase requests: buyers expressing interest before a seller accepts one.
 -- The seed mirrors the same two-step flow the CLI uses: request, then the
 -- owner accepts one (auto-rejecting any other pending requests for that

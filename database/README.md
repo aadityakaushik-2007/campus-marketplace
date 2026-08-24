@@ -10,7 +10,7 @@ The eight application tables are:
 
 | Table | Purpose |
 | --- | --- |
-| `users` | Student profiles linked to Supabase Auth UUIDs; no passwords are stored. |
+| `users` | Student profiles linked to Auth0 identities; no passwords are stored. |
 | `categories` | Listing categories. |
 | `listings` | Items offered for sale or borrowing. |
 | `listing_images` | Supabase Storage URLs/paths for listing images. |
@@ -52,7 +52,7 @@ Both borrowing and buying go through a request, then an accept/reject step, rath
 Plain `psql` session against a freshly seeded database, covering all eight tables:
 
 ```
-=> INSERT INTO users (auth_user_id, name, email, contact_info) VALUES ('30000000-0000-4000-8000-000000000099', 'Sanity Check', 'sanity.check@thapar.edu', '@sanity.check') RETURNING user_id, name, email;
+=> INSERT INTO users (auth_user_id, name, email, contact_info) VALUES ('auth0|sanity-check', 'Sanity Check', 'sanity.check@thapar.edu', '@sanity.check') RETURNING user_id, name, email;
  user_id |     name     |          email
 ---------+--------------+-------------------------
       15 | Sanity Check | sanity.check@thapar.edu

@@ -1,8 +1,8 @@
 -- Stores the application profile for each Thapar student.
--- Authentication itself is handled by Supabase Auth.
+-- Authentication itself is handled by Auth0.
 CREATE TABLE users (
     user_id BIGSERIAL PRIMARY KEY,
-    auth_user_id UUID NOT NULL,
+    auth_user_id TEXT NOT NULL,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     contact_info TEXT,
@@ -27,4 +27,4 @@ CREATE TABLE users (
 );
 
 -- Passwords and other authentication credentials are intentionally not stored here.
-COMMENT ON TABLE users IS 'Application profiles linked to Supabase Auth.';
+COMMENT ON TABLE users IS 'Application profiles linked to Auth0 identities.';
