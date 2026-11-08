@@ -1,0 +1,153 @@
+.create-listing-window {
+  max-width: 600px;
+  margin: 64px auto 2rem auto;
+  padding: 2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  color: var(--card-text);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.create-listing-feedback { margin: 0; padding: .75rem 1rem; border-radius: 8px; color: #9f1d23; background: rgba(234, 27, 35, .09); }
+.create-listing-feedback.is-pending { color: var(--card-text-muted); background: var(--card-bg-hover); }
+.create-listing-window { margin-top: 84px; }
+
+@media (max-width: 640px) { .create-listing-window { margin: 78px 1rem 1.5rem; padding: 1.25rem; } }
+
+.create-listing-window h1 {
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+}
+
+.create-listing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.create-listing-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.create-listing-form input,
+.create-listing-form select,
+.create-listing-form textarea {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--input-bg);
+  color: var(--text-primary, #ffffff);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: background-color 0.4s ease;
+}
+
+.create-listing-form input::placeholder,
+.create-listing-form textarea::placeholder {
+  color: var(--text-muted, #aaaaaa);
+  opacity: 1;
+}
+
+.create-listing-form input:focus,
+.create-listing-form select:focus,
+.create-listing-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #EA1B23);
+}
+
+.file-upload-label input[type="file"] {
+  padding: 0.5rem 0;
+  border: none;
+  background: transparent;
+}
+
+.file-count {
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+}
+
+.submit-listing-btn {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--primary-color, #EA1B23);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.2s;
+}
+
+.submit-listing-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.submit-listing-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   SELECTED FILES LIST
+   ========================================= */
+
+.file-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selected-files-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--input-bg, #222);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #444);
+}
+
+.file-name {
+  font-size: 0.85rem;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds '...' if the file name is too long */
+  max-width: 85%;
+}
+
+.remove-file-btn {
+  background: transparent;
+  color: #ff4d4f; /* A nice red color for deletion */
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.remove-file-btn:hover {
+  color: #d9363e;
+}

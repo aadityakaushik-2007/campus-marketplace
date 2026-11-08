@@ -1,0 +1,5 @@
+/* Page content sits below the fixed-height navbar; nothing fancy here —
+   most visual styling lives in each page/component's own CSS file. */
+main {
+  min-height: calc(100vh - 60px);
+}

@@ -1,0 +1,100 @@
+/* =========================================
+   1. SEARCH CONTAINER & INPUT
+   ========================================= */
+
+/* The outer container that holds both the input and the submit button */
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px; /* Increased from 190px so it's a usable size */
+  margin-bottom: 1.5rem;
+}
+
+/* Wraps just the input and the icon so the icon can be absolutely positioned */
+.search-input-wrapper {
+  position: relative;
+  flex: 1; /* Makes the input stretch to fill available space */
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  height: 44px;
+  width: 100%;
+  padding: 0 1rem 0 2.5rem; /* 2.5rem on the left leaves room for the icon */
+  border: 2px solid transparent;
+  border-radius: 8px;
+  outline: none;
+  background-color: var(--search-bg);
+  color: var(--search-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+  
+  /* The double box-shadow effect (Soft gray base state) */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05), 0 0 0 4px var(--search-outer-ring);
+  transition: all 0.3s ease;
+}
+
+body.dark .search-input {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5), 0 0 0 4px var(--search-outer-ring);
+}
+
+/* Focus State: The signature red glow activates */
+.search-input:focus {
+  border-color: var(--card-accent, #EA1B23);
+  box-shadow: 0 0 5px var(--search-ring), 0 0 0 4px var(--search-outer-ring);
+}
+
+.search-input::placeholder {
+  color: var(--search-placeholder);
+}
+
+/* =========================================
+   2. THE SEARCH ICON
+   ========================================= */
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  fill: var(--search-icon);
+  width: 1.2rem;
+  height: 1.2rem;
+  transition: fill 0.3s ease;
+  pointer-events: none; /* Stops the icon from blocking clicks to the input */
+}
+
+/* Turns the icon red when you click into the input field! */
+.search-input:focus ~ .search-icon,
+.search-input:focus + .search-icon {
+  fill: var(--card-accent, #EA1B23);
+}
+
+/* =========================================
+   3. THE SEARCH BUTTON (Refined)
+   ========================================= */
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-accent, #EA1B23);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 24px;
+  height: 44px; /* Matched exactly to the input height */
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.search-btn:hover {
+  filter: brightness(1.1);
+}
+
+.search-btn:active {
+  transform: scale(0.97);
+}

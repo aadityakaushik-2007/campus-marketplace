@@ -1,0 +1,17 @@
+.edit-listing-window { max-width: 850px; margin: 90px auto 3rem; padding: 1.5rem; color: var(--card-text, #222); }
+.edit-listing-window h1 { margin: .5rem 0; }
+.edit-listing-window h2 { margin: 1.75rem 0 .75rem; font-size: 1.15rem; }
+.edit-listing-back { color: var(--card-accent, #c2161d); text-decoration: none; }
+.edit-listing-note, .edit-listing-help, .edit-listing-empty { color: var(--text-muted, #666); }
+.edit-listing-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem; }
+.edit-listing-images img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--card-border, #ddd); }
+.edit-listing-form { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--card-border, #ddd); border-radius: 10px; background: var(--card-bg, #fff); }
+.edit-listing-form input { color: var(--card-text, #222); }
+.edit-listing-file-list, .edit-listing-errors { margin: 0; padding-left: 1.25rem; }
+.edit-listing-file-list li { display: flex; align-items: center; gap: .75rem; margin: .4rem 0; }
+.edit-listing-file-list button { border: 0; background: transparent; color: #c2161d; cursor: pointer; }
+.edit-listing-errors { color: #b42318; }
+.edit-listing-upload, .edit-listing-error button { align-self: flex-start; border: 0; border-radius: 7px; padding: .7rem 1rem; background: var(--primary-color, #ea1b23); color: #fff; font-weight: 600; cursor: pointer; }
+.edit-listing-upload:disabled { opacity: .6; cursor: not-allowed; }
+.edit-listing-error { max-width: 600px; margin: 100px auto; padding: 1.5rem; text-align: center; }
+@media (max-width: 600px) { .edit-listing-window { margin-top: 76px; padding: 1rem; } }

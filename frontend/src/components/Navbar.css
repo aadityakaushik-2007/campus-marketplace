@@ -1,0 +1,285 @@
+/* =========================================
+   1. NAVBAR LAYOUT
+   ========================================= */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+
+  height: 64px; 
+  box-sizing: border-box;
+  
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  
+  /* Blurs the page content as it scrolls under the navbar */
+  backdrop-filter: blur(8px); 
+  -webkit-backdrop-filter: blur(8px);
+
+  position: fixed; /* Floats over the page */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  
+  /* Add 'transform' to the transition so it slides smoothly */
+  /* Smooth transition when switching light/dark modes */
+  transition: transform 0.3s ease, background-color 0.4s ease, border-color 0.4s ease;
+}
+
+/* This class gets applied by React when scrolling down */
+.navbar-hidden {
+  transform: translateY(-100%); /* Slides it exactly its own height upwards */
+}
+
+/* Keeps the logo and text aligned in a row */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Space between the logo and the text */
+}
+
+/* The Logo */
+.navbar-logo {
+  /* Set this to roughly the total height of your navbar */
+  height: 64px; 
+  width: 64px;
+  object-fit: cover;
+  display: block;
+  
+  margin: -1rem 0 -1rem -2rem; 
+}
+
+/* =========================================
+   2. BRAND & LINKS
+   ========================================= */
+
+.navbar-brand {
+  font-family: 'Inter', system-ui, sans-serif; /* Fallback to clean system fonts */
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: var(--nav-text);
+  letter-spacing: -0.03em;
+  transition: color 0.4s ease;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+}
+
+/* Base styling for both standard links and the login button */
+.navbar-links a,
+.navbar-link-btn {
+  text-decoration: none;
+  color: var(--nav-link);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.navbar-links a:hover,
+.navbar-link-btn:hover {
+  color: var(--nav-link-hover);
+}
+
+/* =========================================
+   3. BUTTONS (CTA & Logout)
+   ========================================= */
+
+/* "Sign up" */
+.navbar-cta {
+  background: var(--nav-cta-bg);
+  color: var(--nav-cta-text) !important; /* Overrides the standard link color */
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  
+  /* Better hover effect than opacity: shifts up slightly and gets brighter */
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.navbar-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* "Logout" */
+.navbar-logout {
+  background: transparent;
+  color: var(--nav-text);
+  border: 1px solid var(--nav-btn-border);
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-logout:hover {
+  background: var(--nav-btn-hover-bg);
+  border-color: var(--nav-text); /* Border gets stronger on hover */
+}
+
+/* The switch - the box around the slider */
+.switch {
+  font-size: 13px;
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+
+.slider {
+  --background-light: #e4e4e7; 
+  --background-dark: #3f3f46; 
+  
+  --sun-color: #f59e0b;  
+  --moon-color: #fbbf24; 
+
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-light);
+  transition: .5s;
+  border-radius: 30px;
+}
+
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 1.4em;
+  width: 1.4em;
+  border-radius: 50%;
+  left: 10%;
+  bottom: 15%;
+  /* Thick inset shadow creates the full sun circle */
+  box-shadow: inset 15px -4px 0px 15px var(--sun-color);
+  background: var(--background-light);
+  transition: .5s;
+}
+
+.switch input:focus-visible + .slider { outline: 2px solid var(--nav-link-hover); outline-offset: 3px; }
+
+input:checked + .slider {
+  background-color: var(--background-dark);
+}
+
+input:checked + .slider:before {
+  transform: translateX(100%);
+  /* Thin inset shadow creates the crescent moon */
+  box-shadow: inset 8px -4px 0px 0px var(--moon-color);
+  background: var(--background-dark);
+}
+
+.button {
+  background: linear-gradient(140.14deg, #EA1B23 15.05%, #C2161D 114.99%)
+      padding-box,
+    linear-gradient(142.51deg, #FF575D 8.65%, #9E0E14 88.82%) border-box;
+  border-radius: 7px;
+  border: 2px solid transparent;
+
+  text-shadow: 1px 1px 1px #00000040;
+  box-shadow: 0px 0px 20px 4px #827d7b59;
+
+  padding: 5px 10px;
+  line-height: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.button:hover {
+  box-shadow: none;
+  opacity: 80%;
+}
+
+.mobile-menu-toggle { display: none; }
+
+@media (max-width: 600px) {
+  .navbar { padding: max(.55rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) .55rem max(1rem, env(safe-area-inset-left)); }
+  .navbar-logo { width: 42px; height: 42px; margin: 0; object-fit: contain; }
+  .navbar-left { gap: .45rem; }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-links { display: none; }
+  .navbar-links.mobile-menu-open {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .15rem;
+    max-height: calc(100dvh - 64px - env(safe-area-inset-top));
+    overflow-y: auto;
+    padding: .55rem max(1rem, env(safe-area-inset-left)) calc(.85rem + env(safe-area-inset-bottom));
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--nav-border);
+    box-shadow: 0 14px 24px rgba(0, 0, 0, .14);
+    font-size: .92rem;
+  }
+  .navbar-links.mobile-menu-open > a,
+  .navbar-links.mobile-menu-open > .navbar-link-btn,
+  .navbar-links.mobile-menu-open > .navbar-logout,
+  .navbar-links.mobile-menu-open > .button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 46px;
+    padding: .65rem .7rem;
+    text-align: left;
+    border-radius: 7px;
+  }
+  .navbar-links.mobile-menu-open > .button { justify-content: flex-start; }
+  .navbar-links.mobile-menu-open > .navbar-logout { border-color: var(--nav-btn-border); }
+  .navbar-links.mobile-menu-open > .switch { align-self: flex-start; margin: .35rem .65rem .55rem; }
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    min-width: 78px;
+    min-height: 44px;
+    padding: .45rem .65rem;
+    border: 1px solid var(--nav-btn-border);
+    border-radius: 8px;
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    font: 600 .82rem 'Inter', system-ui, sans-serif;
+  }
+  .mobile-menu-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+}
+
+@media (max-width: 390px) {
+  .navbar-brand { display: none; }
+}

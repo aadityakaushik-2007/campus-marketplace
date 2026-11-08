@@ -1,0 +1,353 @@
+/* =========================================
+   1. PROFILE LAYOUT
+   ========================================= */
+.profile-window {
+  max-width: 700px;
+  margin: 0 auto;
+  margin-top: 64px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  color: var(--profile-text);
+}
+
+.profile-window h1, .profile-window h2 {
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  color: var(--profile-text);
+}
+
+.profile-card {
+  background: var(--profile-card-bg);
+  border: 1px solid var(--profile-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+body.dark .profile-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================================
+   2. PROFILE FIELDS (View Mode)
+   ========================================= */
+.profile-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--profile-border);
+  padding-bottom: 0.75rem;
+}
+
+.profile-field:last-of-type {
+  border-bottom: none;
+}
+
+.profile-label {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--profile-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* =========================================
+   3. LISTS (Listings & Transactions)
+   ========================================= */
+.profile-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.profile-list li {
+  background: var(--profile-card-bg);
+  border: 1px solid var(--profile-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+}
+
+.profile-price {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: var(--profile-accent);
+  font-weight: 600;
+}
+
+.profile-empty {
+  color: var(--profile-text-muted);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+/* =========================================
+   4. FORMS & INPUTS (Edit Mode)
+   ========================================= */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.profile-edit-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: var(--profile-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.profile-edit-form input {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  border: 2px solid var(--profile-border);
+  border-radius: 8px;
+  background: var(--profile-input-bg);
+  color: var(--profile-text);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+/* Glowing red focus effect matching your search bar */
+.profile-edit-form input:focus {
+  border-color: var(--profile-accent);
+  box-shadow: 0 0 0 4px rgba(234, 27, 35, 0.15);
+}
+
+body.dark .profile-edit-form input:focus {
+  box-shadow: 0 0 0 4px rgba(234, 27, 35, 0.25);
+}
+
+/* =========================================
+   5. BUTTONS
+   ========================================= */
+.profile-edit-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.profile-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--profile-accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.profile-save-btn:hover {
+  filter: brightness(1.1);
+}
+
+.profile-save-btn:active {
+  transform: scale(0.97);
+}
+
+.profile-edit-btn,
+.profile-edit-actions button[type='button'] {
+  background: transparent;
+  border: 2px solid var(--profile-border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--profile-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-edit-btn {
+  align-self: flex-start;
+  margin-top: 1rem;
+}
+
+.profile-edit-btn:hover,
+.profile-edit-actions button[type='button']:hover {
+  border-color: var(--profile-text-muted);
+}
+
+/* --- LAYOUT & CONTAINERS --- */
+.requests-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.request-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.request-column h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--req-heading);
+  margin: 0 0 0.5rem 0;
+}
+
+/* --- CARDS --- */
+.request-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--req-bg-card);
+  border: 1px solid var(--req-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.request-card p {
+  margin: 0;
+  font-size: 0.925rem;
+  color: var(--req-text);
+  line-height: 1.4;
+}
+
+.request-card p strong {
+  font-weight: 600;
+}
+
+/* --- ACTION BUTTONS --- */
+.request-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-approve,
+.btn-reject {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+/* Primary Action */
+.btn-approve {
+  background-color: var(--req-primary);
+  border: 1px solid var(--req-primary);
+  color: #ffffff;
+}
+
+.btn-approve:hover {
+  background-color: var(--req-primary-hover);
+  border-color: var(--req-primary-hover);
+}
+
+/* Neutral/Decline Action styled like your "Edit Profile" button */
+.btn-reject {
+  background-color: transparent;
+  border: 1px solid var(--req-btn-border);
+  color: var(--req-text);
+}
+
+.btn-reject:hover {
+  background-color: var(--req-btn-secondary-hover);
+}
+
+.btn-approve:active,
+.btn-reject:active {
+  transform: scale(0.97);
+}
+
+/* --- STATUS BADGES --- */
+.status-badge {
+  font-size: 0.775rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.status-badge.pending {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.status-badge.approved,
+.status-badge.accepted {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.status-badge.rejected,
+.status-badge.declined {
+  color: var(--req-primary);
+  background: rgba(234, 27, 35, 0.1);
+  border-color: rgba(234, 27, 35, 0.2);
+}
+.profile-feedback { padding: .8rem 1rem; border-radius: 8px; background: rgba(234,27,35,.08); color: var(--profile-text); }
+.profile-load-error { padding: .9rem 1rem; border: 1px solid rgba(234,27,35,.25); border-radius: 8px; color: var(--profile-text); background: rgba(234,27,35,.08); }
+.request-user-link { color: var(--card-accent); }
+.request-date-range { color: var(--req-text-muted); font-size: .9rem; }
+.request-status-action,
+.inline-review-form button { min-height: 40px; padding: .55rem .8rem; border: 1px solid var(--card-border); border-radius: 7px; background: var(--card-bg); color: var(--card-text); font: 600 .82rem 'Inter', system-ui, sans-serif; cursor: pointer; }
+.request-status-action:disabled,
+.inline-review-form button:disabled { opacity: .6; cursor: wait; }
+.transaction-list { display: grid; gap: .8rem; }
+.transaction-card { display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--card-border); border-radius: 10px; background: var(--card-bg); color: var(--card-text); }
+.transaction-card > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.transaction-card > div:first-child a { color: var(--card-accent); }
+.inline-review-form { display: grid; grid-template-columns: minmax(100px, .35fr) minmax(180px, 1fr) auto; align-items: end; gap: .65rem; }
+.inline-review-form label { display: grid; gap: .3rem; color: var(--profile-text-muted); font-size: .75rem; }
+.inline-review-form input,
+.inline-review-form select { width: 100%; min-height: 40px; padding: .5rem .6rem; border: 1px solid var(--card-border); border-radius: 7px; background: var(--card-bg); color: var(--card-text); font: 400 .82rem 'Inter', system-ui, sans-serif; }
+
+@media (max-width: 680px) {
+  .profile-window { padding: 1.25rem 1rem; gap: 1.35rem; }
+  .profile-card { padding: 1.15rem; }
+  .requests-container { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-top: 1.25rem; }
+  .request-card { align-items: stretch; flex-direction: column; gap: .75rem; padding: .95rem; }
+  .request-actions { display: flex; gap: .65rem; }
+  .request-actions button { flex: 1; min-height: 44px; }
+  .profile-edit-actions { flex-wrap: wrap; }
+  .profile-edit-actions button, .profile-save-btn, .profile-edit-btn { min-height: 44px; }
+  .section-header { flex-wrap: wrap; gap: .75rem; }
+  .inline-review-form { grid-template-columns: 1fr; }
+  .transaction-card > div:first-child { align-items: flex-start; flex-direction: column; }
+  .profile-list li { align-items: flex-start !important; flex-wrap: wrap; gap: .75rem; padding: .9rem; }
+  .profile-list li > div { flex-wrap: wrap; gap: .5rem !important; min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .profile-window { padding-inline: .75rem; }
+  .profile-field { align-items: flex-start; flex-direction: column; gap: .25rem; }
+}

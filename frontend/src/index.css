@@ -1,0 +1,206 @@
+/* =====================================================================
+   GLOBAL DESIGN TOKENS
+   Change values here to re-theme the ENTIRE site — every component pulls
+   its colors/fonts from these variables instead of hardcoding them.
+   ===================================================================== */
+:root {
+  --nav-bg: rgba(255, 255, 255, 0.9); /* Slightly transparent for blur effect */
+  --nav-text: #171717;
+  --nav-link: #666666;
+  --nav-link-hover: #000000;
+  --nav-border: #eaeaea;
+  
+  --nav-cta-bg: #EA1B23; /* Custom red */
+  --nav-cta-text: #ffffff;
+  
+  --nav-btn-border: #d4d4d8;
+  --nav-btn-hover-bg: #f4f4f5;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #171717;
+  --sidebar-text-muted: #666666;
+  --sidebar-border: #eaeaea;
+  --sidebar-input-bg: #ffffff;
+  --sidebar-input-border: #d4d4d8;
+  --sidebar-accent: #EA1B23;
+
+  --page-bg: #f8fafc;
+  --page-text: #171717;
+  --pattern-dot: rgba(0,0,0,0.04);
+
+  --card-bg: #ffffff;
+  --card-bg-hover: #f8fafc;
+  --card-text: #171717;
+  --card-text-muted: #666666;
+  --card-border: #eaeaea;
+  --card-btn-bg: #171717;
+  --card-btn-text: #ffffff;
+  --card-accent: #EA1B23;
+
+  --search-bg: #ffffff;
+  --search-text: #171717;
+  --search-placeholder: #a1a1aa;
+  --search-icon: #a1a1aa;
+  --search-ring: rgba(234, 27, 35, 0.15); 
+  --search-outer-ring: #f8fafc;
+
+  --profile-card-bg: #ffffff;
+  --profile-border: #eaeaea;
+  --profile-text: #171717;
+  --profile-text-muted: #666666;
+  --profile-input-bg: #f8fafc;
+  --profile-accent: #EA1B23;
+
+  --text-primary: #171717;
+  --input-bg: #f8fafc;
+
+  --owner-bg: #EA1B23;
+  --owner-border: #ff4d55;
+  --owner-text: #ffffff;
+
+  --req-bg-card: #ffffff;
+  --req-border: #ececec;
+  --req-text: #111111;
+  --req-text-muted: #777777;
+  --req-heading: #111111;
+  
+  --req-primary: #ea1b23;
+  --req-primary-hover: #c9141b;
+
+  --req-btn-border: #e2e8f0;
+  --req-btn-secondary-hover: #f1f5f9;
+
+  --home-bg: #f9fafb;
+  --home-text: #111827;
+  --home-text-muted: #6b7280;
+  --glow-1: rgba(246, 59, 59, 0.3); /* Blue */
+  --glow-2: rgba(246, 92, 136, 0.3); /* Purple */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+
+  --gallery-bg: #f3f4f6; 
+  --gallery-border: #e5e7eb;
+  --thumbnail-opacity: 0.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--page-bg);
+  background-image: radial-gradient(var(--pattern-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  
+  /* Smooth theme transitions */
+  transition: background-color 0.4s ease, background-image 0.4s ease;
+}
+
+body.dark {
+  --nav-bg: rgba(24, 24, 27, 0.9); 
+  --nav-text: #ffffff;
+  --nav-link: #a1a1aa;
+  --nav-link-hover: #ffffff;
+  --nav-border: #27272a;
+  
+  --nav-cta-bg: #EA1B23; 
+  --nav-cta-text: #ffffff;
+  
+  --nav-btn-border: #3f3f46;
+  --nav-btn-hover-bg: #27272a;
+
+  --sidebar-bg: #18181b; 
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #a1a1aa;
+  --sidebar-border: #27272a;
+  --sidebar-input-bg: #18181b;
+  --sidebar-input-border: #3f3f46;
+  --sidebar-accent: #EA1B23;
+
+  --page-bg: #09090b;
+  --page-text: #ffffff;
+  --pattern-dot: rgba(255,255,255,0.03);
+
+  --card-bg: #18181b;
+  --card-bg-hover: #27272a;
+  --card-text: #ffffff;
+  --card-text-muted: #a1a1aa;
+  --card-border: #3f3f46;
+  --card-btn-bg: #ffffff;
+  --card-btn-text: #18181b;
+  --card-accent: #EA1B23;
+
+  --search-bg: #18181b;
+  --search-text: #ffffff;
+  --search-placeholder: #71717a;
+  --search-icon: #71717a;
+  --search-ring: rgba(234, 27, 35, 0.25); 
+  --search-outer-ring: #09090b;
+
+  --profile-card-bg: #18181b;
+  --profile-border: #3f3f46;
+  --profile-text: #ffffff;
+  --profile-text-muted: #a1a1aa;
+  --profile-input-bg: #09090b;
+  --profile-accent: #EA1B23;
+
+  --text-primary: #ffffff;
+  --input-bg: #09090b;
+
+  --owner-bg: #EA1B23;
+  --owner-border: #ff4d55;
+  --owner-text: #ffffff;
+
+  --req-bg-card: #151719;
+  --req-border: #23272b;
+  --req-text: #e2e8f0;
+  --req-text-muted: #8c96a3;
+  --req-heading: #ffffff;
+
+  --req-btn-border: #2e343b;
+  --req-btn-secondary-hover: #22262b;
+
+  --home-bg: #0a0a0a;
+  --home-text: #f3f4f6;
+  --home-text-muted: #9ca3af;
+  --glow-1: rgba(198, 53, 0, 0.251); 
+  --glow-2: rgba(169, 0, 51, 0.208); 
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.05);
+
+  --gallery-bg: #1a1a1a;
+    --gallery-border: #333;
+    --thumbnail-opacity: 0.5;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Visible focus ring for keyboard navigation (accessibility) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-stamp);
+  outline-offset: 2px;
+}

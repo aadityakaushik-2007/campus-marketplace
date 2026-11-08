@@ -1,0 +1,248 @@
+/* =========================================
+   SIDEBAR LAYOUT
+   ========================================= */
+.filter-sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100%;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  color: var(--sidebar-text);
+  
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+
+.filter-sidebar h2 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.filter-heading-row { display: flex; align-items: center; justify-content: space-between; }
+.filter-close-btn { display: none; }
+.filter-backdrop { display: none; }
+
+/* =========================================
+   INPUTS & LABELS
+   ========================================= */
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace; /* Coder vibe for labels */
+  font-size: 0.75rem;
+  color: var(--sidebar-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.filter-field select {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border: 1px solid var(--sidebar-input-border);
+  border-radius: 6px;
+  background: var(--sidebar-input-bg);
+  color: var(--sidebar-text);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-field select:focus {
+  border-color: var(--sidebar-accent);
+}
+
+.filter-price-values {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: var(--sidebar-accent);
+  font-weight: 600;
+}
+
+/* =========================================
+   DUAL-THUMB SLIDER
+   ========================================= */
+.price-slider {
+  position: relative;
+  height: 24px;
+  margin-top: 4px;
+}
+
+.price-slider input[type='range'] {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.price-slider input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--sidebar-input-border);
+  border-radius: 2px;
+}
+
+.price-slider input[type='range']::-moz-range-track {
+  height: 4px;
+  background: var(--sidebar-input-border);
+  border-radius: 2px;
+}
+
+/* The Draggable Thumbs */
+.price-slider input[type='range']::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--sidebar-accent);
+  cursor: pointer;
+  /* Creates a cutout effect against the sidebar background */
+  box-shadow: 0 0 0 3px var(--sidebar-bg); 
+  transition: transform 0.1s ease;
+}
+
+.price-slider input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15); /* Slightly pops up when hovered */
+}
+
+.price-slider input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--sidebar-accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px var(--sidebar-bg);
+  transition: transform 0.1s ease;
+}
+
+.price-slider input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* =========================================
+   BUTTONS (Matched to Navbar)
+   ========================================= */
+.filter-apply-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sidebar-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  margin-top: 10px;
+}
+
+.filter-apply-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.filter-apply-btn:active:not(:disabled) {
+  transform: scale(0.97); 
+}
+
+.filter-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-reset-btn {
+  background: transparent;
+  border: 1px solid var(--sidebar-input-border);
+  color: var(--sidebar-text);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+  background: var(--sidebar-input-border);
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS
+   ========================================= */
+@media (max-width: 720px) {
+  .filter-sidebar {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 301;
+    transform: translate(-50%, -50%);
+    width: min(calc(100vw - 24px), 400px);
+    height: auto;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + 12px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-right: none;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 14px;
+    padding: 1.15rem;
+    gap: 1.1rem;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+  }
+
+  .filter-sidebar.mobile-open { display: flex; }
+  .filter-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    border: 0;
+    background: rgba(9, 9, 11, .58);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .filter-close-btn {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--sidebar-input-border);
+    border-radius: 8px;
+    background: var(--sidebar-input-bg);
+    color: var(--sidebar-text);
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .filter-sidebar .filter-apply-btn,
+  .filter-sidebar .filter-reset-btn { min-height: 46px; }
+  .filter-sidebar .filter-field select { min-height: 44px; }
+  .filter-sidebar .price-slider { min-height: 32px; }
+  .filter-sidebar .price-slider input[type='range'] { top: 14px; }
+  .filter-sidebar .price-slider input[type='range']::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -9px; }
+  .filter-sidebar .price-slider input[type='range']::-moz-range-thumb { width: 22px; height: 22px; }
+}
+
+@media (max-width: 380px) {
+  .filter-sidebar { padding: 1rem; gap: .9rem; }
+}

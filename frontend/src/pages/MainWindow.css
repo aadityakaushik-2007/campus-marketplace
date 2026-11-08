@@ -1,0 +1,92 @@
+/* =========================================
+   MAIN LAYOUT & GRID
+   ========================================= */
+
+.main-window {
+  position: relative;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+}
+
+.main-window-content {
+  /* Leaves room for the absolutely positioned 240px sidebar */
+  margin-left: 240px;
+  padding: 2.25rem clamp(1.25rem, 3vw, 3rem);
+  max-width: 1400px;
+  color: var(--page-text);
+  transition: color 0.4s ease;
+}
+
+/* Responsive card grid - fills as many columns as fit at ~220px each */
+.listing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* =========================================
+   STATES (Empty & Error)
+   ========================================= */
+
+.main-window-error {
+  color: #EA1B23; /* Your signature red */
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  padding: 1rem 0;
+}
+
+.main-window-empty {
+  color: var(--sidebar-text-muted); /* Leverages the gray from your dark mode setup */
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  padding: 1.25rem 1.4rem;
+  display: grid;
+  gap: .35rem;
+  border: 1px dashed var(--card-border);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.main-window-empty strong { color: var(--page-text); }
+.browse-loading { min-height: 220px; display: grid; place-items: center; }
+.browse-mobile-controls { display: none; }
+.active-filter-chips,
+.browse-results-count { display: none; }
+
+@media (max-width: 960px) {
+  .main-window-content { margin-left: 220px; padding: 1.75rem 1.5rem; }
+  .filter-sidebar { width: 220px; padding: 1.25rem; }
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS
+   ========================================= */
+
+@media (max-width: 720px) {
+  .main-window { margin-top: 64px; }
+  .main-window-content {
+    margin-left: 0; 
+    padding: 1.5rem;
+  }
+  .main-window > .filter-sidebar { width: min(calc(100vw - 24px), 400px); }
+  .browse-mobile-controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: -.35rem 0 1rem; }
+  .browse-filter-toggle { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; padding: .55rem .85rem; border: 1px solid var(--card-border); border-radius: 8px; background: var(--card-bg); color: var(--card-text); font: 600 .9rem 'Inter', system-ui, sans-serif; }
+  .browse-filter-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  .browse-filter-count { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 .25rem; border-radius: 99px; background: var(--card-accent); color: #fff; font-size: .72rem; }
+  .browse-sort-control { display: inline-flex; align-items: center; gap: .4rem; color: var(--card-text-muted); font: 500 .78rem 'Inter', system-ui, sans-serif; }
+  .browse-sort-control select { max-width: 168px; min-height: 44px; border: 1px solid var(--card-border); border-radius: 8px; padding: .45rem .55rem; background: var(--card-bg); color: var(--card-text); font: 500 .82rem 'Inter', system-ui, sans-serif; }
+  .active-filter-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: -.2rem 0 .8rem; }
+  .active-filter-chips button { min-height: 34px; display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .6rem; border: 1px solid var(--card-border); border-radius: 99px; background: var(--card-bg); color: var(--card-text); font: 500 .75rem 'Inter', system-ui, sans-serif; }
+  .active-filter-chips .clear-all-filters { border-color: transparent; background: transparent; color: var(--card-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .browse-results-count { display: block; margin: .25rem 0 -.45rem; color: var(--card-text-muted); font-size: .82rem; }
+  .search-group { gap: .55rem; margin-bottom: 1rem; }
+  .search-btn { min-width: 82px; padding-inline: .9rem; }
+  .listing-grid { grid-template-columns: minmax(0, 1fr); gap: .85rem; margin-top: 1rem; }
+}
+
+@media (max-width: 420px) {
+  .main-window-content { padding: 1.25rem 1rem; }
+  .browse-sort-control { gap: .25rem; }
+  .browse-sort-control select { max-width: clamp(112px, 38vw, 152px); }
+}
