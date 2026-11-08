@@ -200,4 +200,19 @@ Transactions are created only as a side effect of accepting a purchase request (
 - **`POST /listings` `images` vs `POST /listings/:id/images`.** Listing creation accepts an optional `images` array of plain URL strings, inserted as-is — useful for seeding/demo data or externally-hosted images. The dedicated `/images` endpoint is the real upload path (multipart file → Supabase Storage → DB row). A reviewer testing image upload should use the latter; the former does not validate that the URLs point to anything real.
 - **No pagination** on any list endpoint (`GET /listings`, `/mine`, `/incoming`, `/mine` for transactions, etc.) — acceptable at current seed-data scale but worth flagging as a known gap for a production system.
 - **No rate limiting / request size limits** beyond Multer's 5MB image cap and Express defaults.
+
+## 9. Frontend-support additions
+
+| Method & path | Authentication | Response | Purpose |
+|---|---|---|---|
+| `GET /api/users/search?query=<name>` | Required | `{ users }` | Searches up to 20 members by name. Rows contain `user_id` and `name` only. |
+| `GET /api/users/:id` | Not required | `{ user }` | Public profile with reviews and active `listings`; email and contact information are excluded. |
+| `GET /api/listings` | Not required | `{ listings }` | Browse active listings without signing in. |
+| `GET /api/listings/:id` | Not required | `{ listing }` | View one listing without signing in. |
+
+Listing responses include `borrowed_until`: the latest future end time for a `BOOKED` or `ACTIVE` borrowing, or `null` if there is no current reservation.
+
+Authenticated borrowing and transaction history responses include caller-specific `has_review`. It is true only when the current caller has already reviewed that borrowing or transaction.
+
+All write endpoints, `/api/users/me`, request histories, transactions, reviews, image uploads, and user search remain protected by Auth0 bearer-token authentication.
 - **CORS is fully open** (`app.use(cors())` with no options) — fine for coursework, would need an allow-list before any real deployment.

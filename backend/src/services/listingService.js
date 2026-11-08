@@ -17,6 +17,13 @@ const listingSelect = `
     l.status,
     l.created_at,
     l.updated_at,
+    (
+        SELECT MAX(b.end_time)
+        FROM borrowings b
+        WHERE b.listing_id = l.listing_id
+          AND b.status IN ('BOOKED', 'ACTIVE')
+          AND b.end_time > NOW()
+    ) AS borrowed_until,
     COALESCE(
         json_agg(li.image_url ORDER BY li.image_id)
         FILTER (WHERE li.image_id IS NOT NULL),
@@ -139,6 +146,23 @@ export async function getListingsByOwner(ownerId) {
         JOIN categories c ON c.category_id = l.category_id
         LEFT JOIN listing_images li ON li.listing_id = l.listing_id
         WHERE l.owner_id = $1
+        GROUP BY l.listing_id, u.name, c.name
+        ORDER BY l.created_at DESC
+        `,
+        [ownerId]
+    );
+    return result.rows;
+}
+
+export async function getActiveListingsByOwner(ownerId) {
+    const result = await query(
+        `
+        SELECT ${listingSelect}
+        FROM listings l
+        JOIN users u ON u.user_id = l.owner_id
+        JOIN categories c ON c.category_id = l.category_id
+        LEFT JOIN listing_images li ON li.listing_id = l.listing_id
+        WHERE l.owner_id = $1 AND l.status = 'ACTIVE'
         GROUP BY l.listing_id, u.name, c.name
         ORDER BY l.created_at DESC
         `,

@@ -25,9 +25,10 @@ const upload = multer({
     }
 });
 
-router.get('/', requireAuth, getListingsController);
+// Browsing public marketplace listings does not require an account.
+router.get('/', getListingsController);
 router.get('/mine', requireAuth, getOwnListingsController);
-router.get('/:id', requireAuth, getListingByIdController);
+router.get('/:id', getListingByIdController);
 router.post('/', requireAuth, createListingController);
 router.patch('/:id/status', requireAuth, removeListingController);
 router.post('/:id/images', requireAuth, upload.single('image'), addListingImageController);

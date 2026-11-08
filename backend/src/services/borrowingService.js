@@ -1,6 +1,6 @@
 import { query } from '../db.js';
 
-const borrowingSelect = `
+const borrowingSelect = (reviewerIdParameter) => `
     b.borrowing_id,
     b.listing_id,
     l.title,
@@ -13,7 +13,13 @@ const borrowingSelect = `
     b.total_amount,
     b.status,
     b.created_at,
-    b.responded_at
+    b.responded_at,
+    EXISTS (
+        SELECT 1
+        FROM reviews r
+        WHERE r.borrowing_id = b.borrowing_id
+          AND r.reviewer_id = ${reviewerIdParameter}
+    ) AS has_review
 `;
 
 export async function createBorrowing({ listingId, borrowerId, startTime, endTime }) {
@@ -31,7 +37,7 @@ export async function createBorrowing({ listingId, borrowerId, startTime, endTim
 export async function getBorrowingsByBorrower(borrowerId) {
     const result = await query(
         `
-        SELECT ${borrowingSelect}
+        SELECT ${borrowingSelect('$1')}
         FROM borrowings b
         JOIN listings l ON l.listing_id = b.listing_id
         JOIN users owner ON owner.user_id = l.owner_id
@@ -47,7 +53,7 @@ export async function getBorrowingsByBorrower(borrowerId) {
 export async function getIncomingBorrowings(ownerId) {
     const result = await query(
         `
-        SELECT ${borrowingSelect}
+        SELECT ${borrowingSelect('$1')}
         FROM borrowings b
         JOIN listings l ON l.listing_id = b.listing_id
         JOIN users owner ON owner.user_id = l.owner_id

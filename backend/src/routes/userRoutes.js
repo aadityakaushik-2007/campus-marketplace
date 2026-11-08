@@ -4,13 +4,15 @@ import { requireAuth } from '../middleware/auth.js';
 import {
     getCurrentUser,
     getUserProfileController,
-    updateCurrentUser
+    updateCurrentUser,
+    searchUsersController
 } from '../controllers/userController.js';
 
 const router = Router();
 
 router.get('/me', requireAuth, getCurrentUser);
 router.patch('/me', requireAuth, updateCurrentUser);
-router.get('/:id', requireAuth, getUserProfileController);
+router.get('/search', requireAuth, searchUsersController);
+router.get('/:id', getUserProfileController);
 
 export default router;

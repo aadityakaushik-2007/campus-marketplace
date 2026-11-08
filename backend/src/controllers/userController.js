@@ -1,5 +1,6 @@
 import { query } from '../db.js';
-import { getUserProfile } from '../services/userService.js';
+import { getUserProfile, searchUsers } from '../services/userService.js';
+import { getActiveListingsByOwner } from '../services/listingService.js';
 
 export async function getCurrentUser(req, res) {
     res.json({ user: req.user });
@@ -17,7 +18,20 @@ export async function getUserProfileController(req, res, next) {
 
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        res.json({ user });
+        const listings = await getActiveListingsByOwner(userId);
+        res.json({ user: { ...user, listings } });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function searchUsersController(req, res, next) {
+    try {
+        const searchQuery = typeof req.query.query === 'string' ? req.query.query.trim() : '';
+        if (searchQuery.length > 100) {
+            return res.status(400).json({ error: 'query must be at most 100 characters' });
+        }
+        res.json({ users: await searchUsers(searchQuery) });
     } catch (error) {
         next(error);
     }

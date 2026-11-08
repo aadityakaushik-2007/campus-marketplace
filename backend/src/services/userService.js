@@ -54,7 +54,7 @@ export async function getOrCreateUser(authUser) {
 export async function getUserProfile(userId) {
     const userResult = await query(
         `
-        SELECT user_id, name, email, contact_info, created_at
+        SELECT user_id, name, created_at
         FROM users
         WHERE user_id = $1
         `,
@@ -86,4 +86,20 @@ export async function getUserProfile(userId) {
         ...userResult.rows[0],
         reviews: reviewsResult.rows
     };
+}
+
+export async function searchUsers(searchQuery) {
+    if (!searchQuery) return [];
+
+    const result = await query(
+        `
+        SELECT user_id, name
+        FROM users
+        WHERE name ILIKE $1
+        ORDER BY name ASC, user_id ASC
+        LIMIT 20
+        `,
+        [`%${searchQuery}%`]
+    );
+    return result.rows;
 }

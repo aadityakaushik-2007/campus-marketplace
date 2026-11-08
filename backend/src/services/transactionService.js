@@ -1,6 +1,6 @@
 import { query } from '../db.js';
 
-const transactionSelect = `
+const transactionSelect = (reviewerIdParameter) => `
     t.transaction_id,
     t.purchase_request_id,
     t.listing_id,
@@ -12,13 +12,19 @@ const transactionSelect = `
     t.amount,
     t.status,
     t.created_at,
-    t.completed_at
+    t.completed_at,
+    EXISTS (
+        SELECT 1
+        FROM reviews r
+        WHERE r.transaction_id = t.transaction_id
+          AND r.reviewer_id = ${reviewerIdParameter}
+    ) AS has_review
 `;
 
 export async function getTransactionHistory(userId) {
     const result = await query(
         `
-        SELECT ${transactionSelect}
+        SELECT ${transactionSelect('$1')}
         FROM transactions t
         JOIN listings l ON l.listing_id = t.listing_id
         JOIN users buyer ON buyer.user_id = t.buyer_id
@@ -34,7 +40,7 @@ export async function getTransactionHistory(userId) {
 export async function getTransactionById(transactionId, userId) {
     const result = await query(
         `
-        SELECT ${transactionSelect}
+        SELECT ${transactionSelect('$2')}
         FROM transactions t
         JOIN listings l ON l.listing_id = t.listing_id
         JOIN users buyer ON buyer.user_id = t.buyer_id
